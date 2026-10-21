@@ -1,4 +1,5 @@
 [![Crates.io](https://img.shields.io/crates/v/bowery.svg)](https://crates.io/crates/bowery)
+[![npm](https://img.shields.io/npm/v/@imperialbower/bowery.svg)](https://www.npmjs.com/package/@imperialbower/bowery)
 [![Build and Test](https://github.com/ImperialBower/bowery/actions/workflows/ci.yaml/badge.svg)](https://github.com/ImperialBower/bowery/actions/workflows/ci.yaml)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE-MIT)
