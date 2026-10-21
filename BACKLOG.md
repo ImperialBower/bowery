@@ -8,19 +8,16 @@
 ## Recently completed
 
 - **0a.** Repo scaffolded from `/dev-playbook rust` (`8c9b9e2`).
-- **0b.** pkcore `ROADMAP.md` registers EPIC-110–119 for bowery.
+- **0b.** pkcore `ROADMAP.md` registers EPIC-110–119; `docs/EPIC-110_Bowery.md`
+  points to bower's EPIC-20.
 - **0c.** Names reserved: `bowery` 0.0.0 on crates.io, `@imperialbower/bowery`
   0.0.0 on npm; README badges for both.
+- **0d.** `make wasm` in `make ayce` and CI: wasm32 build with `--features wasm`,
+  no wasm-bindgen in the default tree.
+- `bin/security-scan` committed (a global excludes file hid it; the Security
+  workflow failed on every push).
 
 ## EPIC-20 — open work
-
-### Phase 0 — Repo, numbering, toolchain
-
-- [ ] **0b (rest).** `docs/EPIC-110_Bowery.md`: bowery's own EPIC, a pointer to
-  bower's EPIC-20.
-- [ ] **0d.** CI: add `cargo build --target wasm32-unknown-unknown --features wasm`
-  and a `cargo tree -e normal` check (no wasm-bindgen when `wasm` is off). Needs
-  an empty `wasm` feature in `Cargo.toml` first.
 
 ### Phase 1 — Config and check
 
