@@ -6,7 +6,8 @@
 
 ---
 
-# bowery
+# Bowery
+![imperial_bower_doghouse_256.png](docs/images/imperial_bower_doghouse_256.png)
 
 One poker table control, configured not compiled. `bowery` puts a poker table
 in any web page as `<bowery-table>`: a strict replay of a recorded hand, an
