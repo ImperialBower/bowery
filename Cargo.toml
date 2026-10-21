@@ -1,0 +1,15 @@
+[package]
+name = "bowery"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.99.0"
+description = "One poker table control, configured not compiled: <bowery-table>."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ImperialBower/bowery"
+readme = "README.md"
+
+[dependencies]
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }

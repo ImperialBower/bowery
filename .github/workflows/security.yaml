@@ -1,0 +1,14 @@
+name: Security
+on:
+  push:
+  schedule:
+    - cron: "17 4 * * *"   # daily — new advisories appear every day
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-deny
+      - uses: taiki-e/install-action@cargo-audit
+      - run: ./bin/security-scan

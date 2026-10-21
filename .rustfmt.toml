@@ -1,0 +1,15 @@
+# rustfmt config. Only max_width is active; uncomment others to customize.
+# Run `rustfmt --print-config=default <any-file.rs>` to see all current
+# defaults.
+
+# Maximum width of each line.
+# Default: 100
+max_width = 100
+
+# Reorder import statements alphabetically.
+# Default: true
+#   reorder_imports =
+
+# Replace uses of the try! macro by the ? shorthand.
+# Default: false
+#   use_try_shorthand =
