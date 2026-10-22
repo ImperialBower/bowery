@@ -47,8 +47,10 @@ name = "bowery"
 version = "0.0.0"
 dependencies = [
  "pkcore",
+ "rand 0.9.5",
  "serde",
  "serde_yaml_bw",
+ "uuid",
 ]
 
 [[package]]
@@ -298,9 +300,9 @@ checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
 name = "pkcore"
-version = "0.17.2"
+version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2038e7d272b96e9e71d10a93d9a120a62c969fdffb5c993803e461696728651"
+checksum = "ab93137de6540d7b2254b6bb69ce55624eb7cbee637e9ec39ddf0649b820cfce"
 dependencies = [
  "bitvec",
  "cardpack",

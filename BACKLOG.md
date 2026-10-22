@@ -17,17 +17,13 @@
 - **1a–1c.** `Config` (`src/config.rs`) and `check` (`src/check.rs`): one
   failing fixture per rule under `tests/config/`; The Hand checks clean; the
   pre-DEFECT_040 copy fails with exactly {Seats, Result, Money}.
+- **2a–2d.** `Game` (`src/game.rs`): replay over the cursor, takeover on and
+  off the record, play with bots and `next_hand`, D1–D5 kernel tests on and
+  off the record (`tests/game.rs`).
 - `bin/security-scan` committed (a global excludes file hid it; the Security
   workflow failed on every push).
 
 ## EPIC-20 — open work
-
-### Phase 2 — Game
-
-- [ ] **2a.** Replay mode over the cursor; `frame()` per event.
-- [ ] **2b.** Interactive: `take_seat`, `back_to_record`, stacked deck.
-- [ ] **2c.** Play: bots, `next_hand`, button moves, stacks carry over.
-- [ ] **2d.** D1–D5 as kernel tests.
 
 ### Phase 3 — Frame and draw
 
@@ -55,7 +51,8 @@
 
 ## Tech debt
 
-None tracked. See [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md).
+One item: `SmallRng`'s platform dependence. (The pkcore replay-log gap was
+fixed upstream as pkcore DEFECT_041, 0.17.3.) See [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md).
 
 ## Issues
 

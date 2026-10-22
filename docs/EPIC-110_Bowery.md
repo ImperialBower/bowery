@@ -11,13 +11,13 @@
 
 ## Status
 
-Phase 0 and Phase 1 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
+Phases 0 and 1 complete; Phase 2 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
 
 | Component | Status |
 |---|---|
-| Phase 0 — repo, numbering, licence, toolchain, release skeleton | Done — 0a–0d; 0d waiting for green CI |
-| Phase 1 — `Config` and `check` | Done — 1a–1c; waiting for green CI |
-| Phase 2 — `Game`: replay, takeover, bots, next hand | Planned |
+| Phase 0 — repo, numbering, licence, toolchain, release skeleton | Done — 0a–0d |
+| Phase 1 — `Config` and `check` | Done — 1a–1c |
+| Phase 2 — `Game`: replay, takeover, bots, next hand | Done — 2a–2d; waiting for green CI |
 | Phase 3 — `Frame` and `draw::svg`, three layouts, no-overlap proptest | Planned |
 | Phase 4 — wasm surface and `<bowery-table>` | Planned |
 | Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Planned |
@@ -52,3 +52,33 @@ Phase 0 and Phase 1 landed, waiting for green CI. Phase numbers and item letters
   exactly {Seats, Result, Money}.
 - pkcore enters at 0.17.2 (EPIC-20 says 0.17.1; 0.17.2 is the current
   release and the same API).
+
+### Phase 2 notes
+
+- **2a.** Replay: the moments are the cursor's events, one for one, each with
+  the cursor's table (`game__replay_frames_are_cursor_events`). Phase 2 has
+  no `Frame` yet: `Game::event()` and `Game::table()` are what Phase 3's
+  `Frame` is built from.
+- **2b.** Interactive: `take_seat`, an action that matches the record stays
+  on it, any other goes off it; `back_to_record`. Negreanu taken at the flop,
+  checking and calling: the river is 8♠.
+- **2c.** Play: chairs, stacks, blinds, ante, `deck` for hand 1, seeded bots
+  and shuffles, `next_hand` (button to the next seated player, stacks carry
+  over, busted players leave).
+- **2d.** D1–D5 and the Return rule, each tested on the record and off it.
+- **The end of a hand off the record.** pkcore's settlement (return, showdown,
+  awards) is private to its cursor. bowery rebuilds the hand as a hand
+  history from the table's own event log when it ends and reads those
+  moments from pkcore's cursor, so it computes no settlement of its own.
+  That needed pkcore 0.17.3: before it, a replayed table did not log the
+  streets it laid (pkcore DEFECT_041, found here and fixed upstream). The
+  log keeps a flop as a set, so the rebuilt flop takes its deal order from
+  the table's board.
+- **API changes from EPIC-20's sketch.** `new`, `seek`, `advance` return
+  `Result`; `frame()` waits for Phase 3; `at()`, `event()`, `table()`,
+  `reader()`, `record_state()`, `hand_number()` are added. Seats with no
+  `bot` other than the reader's are played by pkcore's `gto` profile.
+- **A check rule added:** play's stakes are whole chips
+  (`tests/config/stakes_not_whole.yaml`).
+- `rand` 0.9 (`small_rng`) and `uuid` join the dependencies; both are
+  pkcore's versions. pkcore goes to 0.17.3.

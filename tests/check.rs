@@ -111,6 +111,11 @@ fn check__play_without_stakes() {
 }
 
 #[test]
+fn check__stakes_not_whole() {
+    assert_one_config_problem("stakes_not_whole", "table.stakes.small_blind");
+}
+
+#[test]
 fn check__bot_unknown() {
     assert_one_config_problem("bot_unknown", "players[1].bot");
 }

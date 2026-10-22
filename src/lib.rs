@@ -11,9 +11,12 @@
 //! - [`check`]: refusing a config that is not true. The recorded hand is
 //!   checked by pkcore; a [`check::Checked`] config is the only kind a game
 //!   can be built from.
+//! - [`game`]: one table's game, built from a checked config: the record,
+//!   taking a seat and going off it, play against pkcore's bots, and every
+//!   hand's end as separate moments.
 //!
-//! The rest of the kernel (`game`, `frame`, `draw`) and the `wasm` feature
-//! arrive in the later phases of bower's EPIC-20.
+//! The rest of the kernel (`frame`, `draw`) and the `wasm` feature arrive in
+//! the later phases of bower's EPIC-20.
 //!
 //! ## Quick start
 //!
@@ -39,6 +42,7 @@
 
 pub mod check;
 pub mod config;
+pub mod game;
 
 /// Returns the version of this crate, as `Cargo.toml` declares it.
 ///

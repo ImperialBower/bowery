@@ -1,0 +1,6 @@
+# A small blind of half a chip: play deals in whole chips.
+mode: play
+table: { stakes: { small_blind: 0.5, big_blind: 1.0 } }
+players:
+  - { seat: 0, stack: 200 }
+  - { seat: 1, stack: 200, bot: gto }

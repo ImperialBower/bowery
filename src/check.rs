@@ -7,7 +7,7 @@
 //! [`Problem::Config`] rules:
 //!
 //! - **mode:** replay and interactive need a `hand`; play needs
-//!   `table.stakes` and a `stack` for every player.
+//!   `table.stakes`, in whole chips, and a `stack` for every player.
 //! - **seat:** `seat` has a player in it.
 //! - **start:** `start` needs a `hand`, and the hand reaches it.
 //! - **players:** with a `hand`, each player's seat is in the hand and a given
@@ -195,13 +195,29 @@ fn mode(config: &Config, problems: &mut Vec<Problem>) {
             ));
         }
         Mode::Play => {
-            if config
+            match config
                 .table
                 .as_ref()
                 .and_then(|table| table.stakes.as_ref())
-                .is_none()
             {
-                problems.push(Problem::config("table.stakes", "play needs the blinds"));
+                None => problems.push(Problem::config("table.stakes", "play needs the blinds")),
+                Some(stakes) => {
+                    let named = [
+                        ("small_blind", Some(stakes.small_blind)),
+                        ("big_blind", Some(stakes.big_blind)),
+                        ("ante", stakes.ante),
+                    ];
+                    for (name, value) in named {
+                        if let Some(value) = value
+                            && chips(value).is_none()
+                        {
+                            problems.push(Problem::config(
+                                format!("table.stakes.{name}"),
+                                format!("{value} is not a whole number of chips"),
+                            ));
+                        }
+                    }
+                }
             }
             for (index, player) in config.players.iter().enumerate() {
                 if player.stack.is_none() {
@@ -447,6 +463,18 @@ fn seats(config: &Config, problems: &mut Vec<Problem>) {
     }
 }
 
+/// A hand-history amount as whole chips: `None` unless it is finite,
+/// non-negative, whole and no more than `u32::MAX`.
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the value is checked to be a whole number in 0..=u32::MAX first"
+)]
+pub(crate) fn chips(value: f64) -> Option<usize> {
+    (value.is_finite() && value >= 0.0 && value.fract() == 0.0 && value <= f64::from(u32::MAX))
+        .then_some(value as usize)
+}
+
 /// `1 player`, `3 players`.
 fn count_of(count: usize, noun: &str) -> String {
     if count == 1 {
@@ -506,6 +534,15 @@ mod tests {
             Some("has 2 cards; a deck has 52".to_string()),
             deck_fault("A♠ K♠")
         );
+    }
+
+    #[test]
+    fn chips__whole_numbers_only() {
+        assert_eq!(Some(0), chips(0.0));
+        assert_eq!(Some(600), chips(600.0));
+        for bad in [0.5, -1.0, f64::NAN, f64::INFINITY, 1e12] {
+            assert_eq!(None, chips(bad), "{bad}");
+        }
     }
 
     #[test]

@@ -6,8 +6,10 @@
 ## Tracked debt
 <!-- Human-authored and code-comment-sourced items. -->
 
-None. The crate is the dev-playbook scaffold (`src/lib.rs`, one function) and
-has no `TODO`/`FIXME` comments.
+- [ ] **`SmallRng` differs between 32- and 64-bit targets** — EPIC-20 names
+  `SmallRng`, whose algorithm is platform-dependent, so a play table seeded
+  the same way can deal differently in the browser (wasm32) and natively.
+  Only play mode's bots and shuffles use it. (`src/game.rs`, `Game::new`)
 
 ## 🤖 Automated review findings
 <!-- Machine-proposed. Promote good ones up to "Tracked debt", delete the rest. -->
