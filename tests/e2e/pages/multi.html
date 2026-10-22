@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>three tables</title></head>
+<body style="max-width: 680px">
+<!-- 5b: three replays of one hand, and three heads-up play tables waiting on
+     their readers. Acting in one must not change the other two. -->
+<bowery-table id="r1" base="../bowery/" src="../the-hand-replay.yaml"></bowery-table>
+<bowery-table id="r2" base="../bowery/" src="../the-hand-replay.yaml"></bowery-table>
+<bowery-table id="r3" base="../bowery/" src="../the-hand-replay.yaml"></bowery-table>
+<template id="heads-up">
+mode: play
+seat: 0
+table: { seats: 2, button: 0, stakes: { small_blind: 50.0, big_blind: 100.0 } }
+players:
+  - { seat: 0, name: Reader, stack: 1000 }
+  - { seat: 1, name: Robo, stack: 1000, bot: abc }
+seed: 3
+delay_ms: 25
+</template>
+<bowery-table id="p1" base="../bowery/"></bowery-table>
+<bowery-table id="p2" base="../bowery/"></bowery-table>
+<bowery-table id="p3" base="../bowery/"></bowery-table>
+<script>
+  const yaml = document.getElementById('heads-up').innerHTML;
+  for (const id of ['p1', 'p2', 'p3']) {
+    const script = document.createElement('script');
+    script.type = 'application/yaml';
+    script.textContent = yaml;
+    document.getElementById(id).append(script);
+  }
+</script>
+<script type="module" src="../bowery/bowery.js"></script>
+</body>
+</html>

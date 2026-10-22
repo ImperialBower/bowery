@@ -26,15 +26,12 @@
 - **4a–4c.** `src/element.rs` and `src/wasm.rs` (`BoweryTable`), the size
   profile and gate (1,295,901 bytes; gate 1,425,491), `js/bowery.js`,
   `js/bowery.css`, `demo/index.html` (`make site`, `make serve`).
+- **5a–5d.** Playwright in `tests/e2e/` (`make e2e`): D1–D8, three tables
+  on one page, one origin, script off and `file://`.
 - `bin/security-scan` committed (a global excludes file hid it; the Security
   workflow failed on every push).
 
 ## EPIC-20 — open work
-
-### Phase 5 — The proof
-
-- [ ] **5a–5d.** Playwright: D1–D8, three tables on one page, same-origin
-  requests only, script-off fallback.
 
 ### Phase 6 — Release
 

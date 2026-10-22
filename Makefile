@@ -1,4 +1,4 @@
-.PHONY: default help clean fmt build wasm test lint security-scan docs ayce pkg size site serve
+.PHONY: default help clean fmt build wasm test lint security-scan docs ayce pkg size site serve e2e e2e-pages
 default: ayce
 
 help:  ## self-documenting: every target has a '## comment' printed here
@@ -23,7 +23,7 @@ security-scan: ## dependency vulnerability scan
 	./bin/security-scan
 docs: ## build docs, fail on warnings
 	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --features wasm
-ayce: clean fmt build wasm test lint security-scan docs size ## all-you-can-eat: full pre-push sweep
+ayce: clean fmt build wasm test lint security-scan docs size e2e ## all-you-can-eat: full pre-push sweep
 
 .PHONY: watch install-tools
 
@@ -60,3 +60,13 @@ site: pkg ## assemble the demo in site/: the element in site/bowery/, configs an
 
 serve: site ## serve the demo at http://localhost:8000
 	python3 -m http.server -d site 8000
+
+e2e: site e2e-pages ## the browser proof (Playwright, tests/e2e): D1-D8, three tables, one origin, the fallback
+	cd tests/e2e && npm ci --no-audit --no-fund && npx playwright install chromium && npx playwright test
+
+e2e-pages: ## the e2e pages and their configs, into site/e2e/
+	mkdir -p site/e2e
+	cp tests/e2e/pages/*.html site/e2e/
+	{ printf 'mode: replay\nview: seat\nseat: 1\nhand:\n'; sed 's/^/  /' tests/hands/heads_up_all_in.yaml; } > site/e2e/all-in-replay.yaml
+	{ printf 'mode: interactive\nview: seat\nseat: 1\nstart: 1\ndelay_ms: 25\nhand:\n'; sed 's/^/  /' tests/hands/heads_up_all_in.yaml; } > site/e2e/all-in-interactive.yaml
+	{ printf 'mode: replay\nstart: 2\nhand:\n'; sed 's/^/  /' fixtures/the_hand.yaml; } > site/e2e/the-hand-raise.yaml

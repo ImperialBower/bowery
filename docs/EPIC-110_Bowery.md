@@ -11,7 +11,7 @@
 
 ## Status
 
-Phases 0–3 complete; Phase 4 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
+Phases 0–4 complete; Phase 5 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
 
 | Component | Status |
 |---|---|
@@ -19,8 +19,8 @@ Phases 0–3 complete; Phase 4 landed, waiting for green CI. Phase numbers and i
 | Phase 1 — `Config` and `check` | Done — 1a–1c |
 | Phase 2 — `Game`: replay, takeover, bots, next hand | Done — 2a–2d |
 | Phase 3 — `Frame` and `draw::svg`, three layouts, no-overlap proptest | Done — 3a–3d |
-| Phase 4 — wasm surface and `<bowery-table>` | Done — 4a–4c; waiting for green CI |
-| Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Planned |
+| Phase 4 — wasm surface and `<bowery-table>` | Done — 4a–4c |
+| Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Done — 5a–5d; waiting for green CI |
 | Phase 6 — release `v0.1.0`: crates.io, npm, tarball | Planned |
 
 ### Phase 0 notes
@@ -152,3 +152,37 @@ Phases 0–3 complete; Phase 4 landed, waiting for green CI. Phase numbers and i
   four tables ready, one origin, no console errors, interactive goes off the
   record at moment 11, play reaches the reader's turn. It found one bug: the
   ⏮ ◀ ▶ ⏭ buttons had no accessible name (now `aria-label`).
+
+### Phase 5 notes
+
+- **Where.** `tests/e2e/`, with its own `package.json` pinning
+  `@playwright/test` 1.59.1 (pkarena0-web's, so its browsers are reused); the
+  repo root's `package.json` is left for the npm package (Phase 6).
+  `make e2e` builds `site/`, adds `site/e2e/` (the pages in
+  `tests/e2e/pages/` and configs generated from `tests/hands/` and
+  `fixtures/`), and runs Chromium. `make ayce` and CI's `Browser proof` job
+  run it.
+- **5a.** `d1`–`d5.spec.ts` step through the all-in hand frame by frame on
+  the record (a replay in seat 1's view) and off it (seat 1 calls where the
+  record shoves, and the game runs out and pays by itself). `d6`/`d7` check
+  every frame of three hands at a nine-seat table in ring and spotlight at
+  680 px and at 360 px; the check runs in the page on each `bowery:moment`,
+  measuring with the browser's fonts. `d8` reads the pot at The Hand's
+  re-raise: `POT 8,800`, with 2,100 and 5,000 at their seats.
+- **5b–5d.** `multi.spec.ts` (three replays and three play tables; acting in
+  one leaves the others' SVG byte-identical), `origin.spec.ts` (one origin),
+  `fallback.spec.ts` (script off; `file://`, where the browser refuses the
+  module, so the fallback stays and nothing throws).
+- **Failing first.** D1–D5 failed first in the kernel (Phase 2,
+  `tests/game.rs`); in the browser they passed on their first run. D6–D8 were
+  shown to fail against deliberately broken builds (bet slots moved into the
+  plates, card backs drawn on folded seats, the pot without live bets). The
+  first D6/D7 draft sampled frames on a timer and missed the broken build;
+  the check moved into the page, on every frame.
+- **Found a real bug.** The first frame was measured before `bowery.css`
+  arrived, while the element was still inline at width 0, so a phone-width
+  table drew its first frame as a 680 px ring. An inline
+  `:host { display: block }` fixes it; `d6: a phone-width ring draws as
+  ledger from the first frame` fails on the old element.
+- The board is now one `<g class="board">` (the 24 golden SVGs changed by
+  that wrapper only), so tests can find it.

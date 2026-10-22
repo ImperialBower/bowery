@@ -170,6 +170,10 @@ class BoweryTableElement extends HTMLElement {
   _mount() {
     const root = this.shadowRoot || this.attachShadow({ mode: 'open' });
     root.replaceChildren();
+    // A custom element is inline until bowery.css arrives; block at once, so
+    // the first frame is measured and drawn at the element's real width.
+    const block = document.createElement('style');
+    block.textContent = ':host { display: block; }';
     const style = document.createElement('link');
     style.rel = 'stylesheet';
     style.href = new URL(STYLE, this._base).href;
@@ -180,7 +184,7 @@ class BoweryTableElement extends HTMLElement {
     this._status = document.createElement('div');
     this._status.className = 'status';
     this._status.setAttribute('aria-live', 'polite');
-    root.append(style, this._stage, this._bar, this._status);
+    root.append(block, style, this._stage, this._bar, this._status);
 
     this._width = this.clientWidth || 680;
     this._resize = new ResizeObserver((entries) => {

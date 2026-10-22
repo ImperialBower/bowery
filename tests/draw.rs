@@ -169,3 +169,18 @@ fn draw__long_names_are_cut_to_sixteen() {
 fn theme__display() {
     assert_eq!("dark", Theme::Dark.to_string());
 }
+
+#[test]
+fn draw__board_is_one_group() {
+    let svg = drawn("turn", Layout::Ring, Theme::Light);
+
+    let board = svg
+        .split(r#"<g class="board">"#)
+        .nth(1)
+        .unwrap()
+        .split(r#"<text class="pot""#)
+        .next()
+        .unwrap();
+    assert_eq!(4, board.matches(r#"data-card=""#).count(), "{board}");
+    assert_eq!(1, board.matches(r#"class="slot""#).count(), "{board}");
+}

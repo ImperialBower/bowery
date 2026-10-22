@@ -10,3 +10,4 @@
 * **Update**: pkcore 0.17.3 (DEFECT_041, found here) lets `settle` rebuild a hand from the whole table log; the cut-and-continue workaround is gone, and the rebuilt flop keeps its deal order. See [game](concepts/game.md).
 * **Update**: EPIC-20 Phase 3 — `Frame`, `draw::geometry` (disjoint-boxes proptest), `draw::svg` in three layouts with 24 golden SVGs, `bowery-still`. See [frame and draw](concepts/frame-and-draw.md).
 * **Update**: EPIC-20 Phase 4 — `element` and `wasm` behind the `wasm` feature, the size profile and gate (1,295,901 bytes; gate 1,425,491), `js/bowery.js`, `js/bowery.css`, the demo. See [the element](concepts/element.md).
+* **Update**: EPIC-20 Phase 5 — Playwright in `tests/e2e/` (D1–D8, multi, origin, fallback); found and fixed a first-frame width bug. See [browser proof](concepts/browser-proof.md).

@@ -1,0 +1,11 @@
+{
+  "name": "bowery-e2e",
+  "private": true,
+  "description": "bowery's browser proof (EPIC-20 Phase 5): D1-D8, three tables, one origin, the fallback.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.59.1"
+  }
+}

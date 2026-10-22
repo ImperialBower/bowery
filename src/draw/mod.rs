@@ -344,6 +344,7 @@ fn draw_strip(out: &mut String, lines: &[String], rect: Rect, width: u32, palett
 }
 
 fn draw_board(out: &mut String, frame: &Frame, rect: Rect, palette: &Palette) {
+    out.push_str(r#"<g class="board">"#);
     for (index, card) in (0u32..).zip(frame.board) {
         let x = rect.x + index * (CARD_W + 3);
         match card {
@@ -357,6 +358,7 @@ fn draw_board(out: &mut String, frame: &Frame, rect: Rect, palette: &Palette) {
             }
         }
     }
+    out.push_str("</g>");
 }
 
 /// One card at `(x, y)`: board size, or small for a hole card.

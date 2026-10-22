@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>nine seats</title></head>
+<body>
+<!-- D6-D7: nine bots, every card up, at the book column (680 px, ring and
+     spotlight) and on a phone (360 px, where ring draws as ledger). -->
+<template id="nine">
+mode: play
+view: all
+table: { seats: 9, stakes: { small_blind: 50.0, big_blind: 100.0 } }
+players:
+  - { seat: 0, name: Wolfeschlegelsteinhausenberger, stack: 999999999, bot: gto }
+  - { seat: 1, stack: 10000, bot: tight_passive }
+  - { seat: 2, stack: 10000, bot: loose_aggressive }
+  - { seat: 3, stack: 10000, bot: tight_aggressive }
+  - { seat: 4, stack: 10000, bot: loose_passive }
+  - { seat: 5, stack: 10000, bot: maniac }
+  - { seat: 6, stack: 10000, bot: abc }
+  - { seat: 7, stack: 10000, bot: short_stack_ninja }
+  - { seat: 8, stack: 10000, bot: maniac }
+seed: 20
+delay_ms: 25
+</template>
+<div style="width: 684px"><bowery-table id="ring" base="../bowery/"></bowery-table></div>
+<div style="width: 684px"><bowery-table id="spotlight" base="../bowery/"></bowery-table></div>
+<div style="width: 364px"><bowery-table id="phone" base="../bowery/"></bowery-table></div>
+<script>
+  const yaml = document.getElementById('nine').innerHTML;
+  for (const [id, layout] of [['ring', 'ring'], ['spotlight', 'spotlight'], ['phone', 'ring']]) {
+    const script = document.createElement('script');
+    script.type = 'application/yaml';
+    script.textContent = `${yaml}layout: ${layout}\n`;
+    document.getElementById(id).append(script);
+  }
+</script>
+<script>
+  document.addEventListener('bowery:hand-over', (event) => event.target.setAttribute('data-over', ''));
+</script>
+<script type="module" src="../bowery/bowery.js"></script>
+</body>
+</html>

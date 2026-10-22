@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>all in preflop</title></head>
+<body style="max-width: 680px">
+<!-- D1-D5: heads-up, both all in preflop; seat 1 (Short) wins 400 and seat 0
+     takes back 800. "on" is the record; "off" takes seat 1 and calls where the
+     record says all in, so the run-out is the game's own. -->
+<bowery-table id="on" base="../bowery/" src="all-in-replay.yaml"><p>fallback</p></bowery-table>
+<bowery-table id="off" base="../bowery/" src="all-in-interactive.yaml"><p>fallback</p></bowery-table>
+<script>
+  document.addEventListener('bowery:hand-over', (event) => event.target.setAttribute('data-over', ''));
+</script>
+<script type="module" src="../bowery/bowery.js"></script>
+</body>
+</html>

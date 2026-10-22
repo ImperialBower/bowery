@@ -5,3 +5,6 @@
 # CI runs ./bin/security-scan; keep bin/ tracked even when a global
 # excludes file ignores bin directories.
 !/bin/
+/tests/e2e/node_modules
+/tests/e2e/test-results
+/tests/e2e/playwright-report
