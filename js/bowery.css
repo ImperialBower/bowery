@@ -1,0 +1,73 @@
+/* <bowery-table>: loaded into the element's shadow root, so nothing here
+   reaches the page. Black on white, 2 px strokes, the system monospace;
+   :host([data-dark]) when the page is dark. No fonts, no url(). */
+:host {
+  --bowery-bg: #ffffff;
+  --bowery-fg: #000000;
+  --bowery-to-act: #ffe94d;
+  display: block;
+  max-width: 100%;
+  border: 2px solid var(--bowery-fg);
+  background: var(--bowery-bg);
+  color: var(--bowery-fg);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+}
+:host([data-dark]) {
+  --bowery-bg: #111111;
+  --bowery-fg: #f2f2f2;
+  --bowery-to-act: #5e5200;
+}
+:host(:focus-visible) {
+  outline: 3px solid var(--bowery-to-act);
+  outline-offset: 2px;
+}
+.stage svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  border-top: 2px solid var(--bowery-fg);
+  padding: 6px 8px;
+}
+.bar:empty {
+  display: none;
+}
+button,
+select,
+input {
+  font: inherit;
+  color: var(--bowery-fg);
+  background: var(--bowery-bg);
+  border: 2px solid var(--bowery-fg);
+  border-radius: 0;
+  padding: 2px 8px;
+}
+button {
+  font-weight: 700;
+  cursor: pointer;
+}
+button:hover,
+button:focus-visible {
+  background: var(--bowery-fg);
+  color: var(--bowery-bg);
+}
+input[type='number'] {
+  width: 9ch;
+}
+.readout {
+  flex: 1;
+  min-width: 8ch;
+}
+.status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

@@ -19,8 +19,15 @@
 //! - [`draw`]: the one renderer, a frame as SVG in three layouts, with every
 //!   box placed by [`draw::geometry`] before anything is drawn.
 //!
-//! The `wasm` feature and the `<bowery-table>` element arrive in EPIC-20
-//! Phase 4.
+//! Behind the `wasm` feature (off by default, so the rlib has no
+//! wasm-bindgen in its tree):
+//!
+//! - `element`: what `<bowery-table>` asks of a table, in plain Rust, with
+//!   its state as JSON.
+//! - `wasm`: the `BoweryTable` class JavaScript constructs, one per element.
+//!
+//! `js/bowery.js` and `js/bowery.css` are the element; `make site` builds the
+//! demo (`demo/index.html`) and `make serve` serves it.
 //!
 //! ## Quick start
 //!
@@ -47,8 +54,12 @@
 pub mod check;
 pub mod config;
 pub mod draw;
+#[cfg(feature = "wasm")]
+pub mod element;
 pub mod frame;
 pub mod game;
+#[cfg(feature = "wasm")]
+pub mod wasm;
 
 /// Returns the version of this crate, as `Cargo.toml` declares it.
 ///

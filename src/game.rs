@@ -670,6 +670,38 @@ impl Game {
         self.hand_number
     }
 
+    /// True on the hand's last moment once the hand is over: nothing is
+    /// left to act, deal or pay. Play mode can then deal the next hand.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::check::check;
+    /// use bowery::config::Config;
+    /// use bowery::game::{Advance, Game};
+    /// use pkcore::casino::action::PlayerAction;
+    ///
+    /// let config = Config::from_yaml("
+    /// mode: play
+    /// table: { button: 0, stakes: { small_blind: 1.0, big_blind: 2.0 } }
+    /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
+    /// ").unwrap();
+    /// let mut game = Game::new(check(&config).unwrap()).unwrap();
+    /// assert!(!game.is_hand_over());
+    /// game.act(PlayerAction::Fold).unwrap();
+    /// while game.advance().unwrap() != Advance::Ended {}
+    /// assert!(game.is_hand_over());
+    /// ```
+    #[must_use]
+    pub fn is_hand_over(&self) -> bool {
+        let last = self.at + 1 == self.line.len();
+        let settled = self
+            .live
+            .as_ref()
+            .is_none_or(|live| live.settled && live.pending.is_empty());
+        last && settled && self.event().ends_the_hand()
+    }
+
     /// Where the game stands against the record.
     ///
     /// # Examples

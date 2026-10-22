@@ -11,15 +11,15 @@
 
 ## Status
 
-Phases 0–2 complete; Phase 3 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
+Phases 0–3 complete; Phase 4 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
 
 | Component | Status |
 |---|---|
 | Phase 0 — repo, numbering, licence, toolchain, release skeleton | Done — 0a–0d |
 | Phase 1 — `Config` and `check` | Done — 1a–1c |
 | Phase 2 — `Game`: replay, takeover, bots, next hand | Done — 2a–2d |
-| Phase 3 — `Frame` and `draw::svg`, three layouts, no-overlap proptest | Done — 3a–3d; waiting for green CI |
-| Phase 4 — wasm surface and `<bowery-table>` | Planned |
+| Phase 3 — `Frame` and `draw::svg`, three layouts, no-overlap proptest | Done — 3a–3d |
+| Phase 4 — wasm surface and `<bowery-table>` | Done — 4a–4c; waiting for green CI |
 | Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Planned |
 | Phase 6 — release `v0.1.0`: crates.io, npm, tarball | Planned |
 
@@ -117,3 +117,38 @@ Phases 0–2 complete; Phase 3 landed, waiting for green CI. Phase numbers and i
   `bowery-still` and for Phase 4's `set_layout` and `set_view`.
 - The `make wasm` gate caught a 32-bit overflow in `format_chips` (a
   trillion does not fit in wasm32's `usize`); it counts in `u64`.
+
+### Phase 4 notes
+
+- **4a.** The surface is split in two, both behind the `wasm` feature:
+  `src/element.rs` is the element's logic in plain Rust (state as JSON,
+  actions from JSON), tested natively in `tests/element.rs`; `src/wasm.rs`
+  wraps it with wasm-bindgen and is the only wasm-bindgen code. `serde_json`
+  and `wasm-bindgen` are optional, so `make wasm`'s tree check still finds
+  no wasm-bindgen in the default build. `crate-type = ["rlib", "cdylib"]`.
+- **Size.** The size profile (`opt-level = "z"`, `lto`, `codegen-units = 1`,
+  `wasm-opt -Oz`) gives **1,295,901 bytes** raw (506,549 gzip, 373,214
+  brotli), 40% under pkarena0-web's 2,156,115. The gate is that plus 10%:
+  **1,425,491** (`WASM_GATE` in the `Makefile`; `make size`, run by
+  `make ayce` and by CI's new `Browser build` job).
+- **API beyond EPIC-20's sketch.** `shuffle(seed)` (the element passes a
+  random seed; the kernel has no entropy), `advance()` returns a `Result`,
+  and `state()` carries `controls` (which buttons to show), `seats` (for
+  **Take this seat**), `legal` with sizes, `hand_over`, `delay_ms`. The
+  👁 view toggle defaults to off in play, on otherwise.
+- **File names.** The glue is `bowery_wasm.js` and `bowery_wasm_bg.wasm`, not
+  `bowery_bg.wasm`, because the element itself is `bowery.js`.
+- **4b.** `js/bowery.js` and `js/bowery.css`: lazy (`IntersectionObserver`),
+  one module per page shared by every element, the fallback kept with the
+  problems printed under it, `file://` refused, controls by mode, ← → Home
+  End, the five events, dark from `prefers-color-scheme` or mdBook's
+  classes, redrawn on resize, bots paced by `delay_ms`. `src` changes reload
+  the table.
+- **4c.** `demo/index.html`: The Hand in replay, interactive and play, and a
+  nine-seat bot table configured inline: four tables on one page.
+  `make site` assembles it in `site/` with fallback stills from
+  `bowery-still`; `make serve` serves it.
+- **Smoke-tested in Chromium** before Phase 5 (a throwaway Playwright script):
+  four tables ready, one origin, no console errors, interactive goes off the
+  record at moment 11, play reaches the reader's turn. It found one bug: the
+  ⏮ ◀ ▶ ⏭ buttons had no accessible name (now `aria-label`).

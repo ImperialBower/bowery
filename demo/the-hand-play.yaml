@@ -1,0 +1,16 @@
+# The Hand's table in play mode: the eight players at the broadcast's
+# $300/$600 with a $100 ante, the reader in Negreanu's seat, seven bots.
+mode: play
+seat: 4
+layout: ring
+table: { seats: 8, button: 0, stakes: { small_blind: 300.0, big_blind: 600.0, ante: 100.0 } }
+players:
+  - { seat: 0, name: Doyle Brunson, stack: 100000, bot: tight_aggressive }
+  - { seat: 1, name: Eli Elezra, stack: 100000, bot: loose_passive }
+  - { seat: 2, name: Antonio Esfandiari, stack: 100000, bot: loose_aggressive }
+  - { seat: 3, name: Gus Hansen, stack: 287100, bot: maniac }
+  - { seat: 4, name: Daniel Negreanu, stack: 387100 }
+  - { seat: 5, name: Cory Zeidman, stack: 100000, bot: tight_passive }
+  - { seat: 6, name: Barry Greenstein, stack: 100000, bot: gto }
+  - { seat: 7, name: Amnon Filippi, stack: 100000, bot: abc }
+delay_ms: 500

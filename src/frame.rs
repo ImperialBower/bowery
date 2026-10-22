@@ -233,7 +233,7 @@ impl fmt::Display for Marks {
 ///
 /// assert_eq!("seat 3 wins 575,700", Award { seat: 3, amount: 575_700 }.to_string());
 /// ```
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
 pub struct Award {
     /// The seat paid.
     pub seat: u8,

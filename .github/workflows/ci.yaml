@@ -27,7 +27,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-      - run: cargo test --all
+      - run: cargo test --all --features wasm
 
   wasm:
     name: Wasm
@@ -41,6 +41,21 @@ jobs:
           targets: wasm32-unknown-unknown
       - run: make wasm
 
+  browser:
+    name: Browser build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+      - run: make size
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
@@ -51,7 +66,7 @@ jobs:
         with:
           toolchain: stable
           components: clippy
-      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --all-targets --features wasm -- -D warnings
 
   fmt:
     name: Fmt
@@ -74,7 +89,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-      - run: cargo doc --no-deps
+      - run: cargo doc --no-deps --features wasm
         env:
           RUSTDOCFLAGS: "-D warnings"
 

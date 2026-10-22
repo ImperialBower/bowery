@@ -1,4 +1,6 @@
 /target
+/pkg
+/site
 .idea/
 # CI runs ./bin/security-scan; keep bin/ tracked even when a global
 # excludes file ignores bin directories.

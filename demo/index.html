@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bowery demo</title>
+<style>
+  body { font-family: ui-monospace, Menlo, Consolas, monospace; max-width: 680px; margin: 24px auto; padding: 0 12px; line-height: 1.45; }
+  @media (prefers-color-scheme: dark) { body { background: #111; color: #f2f2f2; } }
+  bowery-table { margin: 12px 0 28px; }
+  bowery-table img { display: block; max-width: 100%; }
+  #log { font-size: 12px; max-height: 12em; overflow: auto; border: 1px solid #888; padding: 6px; }
+</style>
+</head>
+<body>
+<h1>bowery</h1>
+<p>One poker table control, configured not compiled. Every table below is a
+<code>&lt;bowery-table&gt;</code> with its own game; they share one wasm module.</p>
+
+<h2>The Hand — replay</h2>
+<p>The record, one moment at a time: ⏮ ◀ ▶ ⏭ or ← → Home End.</p>
+<bowery-table id="replay" base="bowery/" src="the-hand-replay.yaml">
+  <img src="the-hand-flop.svg" alt="The Hand on the flop: Hansen and Negreanu, 9♣ 6♦ 5♥.">
+</bowery-table>
+
+<h2>The Hand — interactive</h2>
+<p>Take Negreanu's seat at the flop. Act as he did and the record goes on;
+act otherwise and the hand is yours, with the real board still to come.</p>
+<bowery-table id="interactive" base="bowery/" src="the-hand-interactive.yaml">
+  <img src="the-hand-spotlight.svg" alt="The Hand on the flop, in the spotlight layout.">
+</bowery-table>
+
+<h2>The Hand's table — play</h2>
+<p>Negreanu's seat against seven bots, at the broadcast's stakes.</p>
+<bowery-table id="play" base="bowery/" src="the-hand-play.yaml">
+  <img src="the-hand-play.svg" alt="The Hand's table before the first hand.">
+</bowery-table>
+
+<h2>Nine seats — play, ledger</h2>
+<p>Configured inline: nine bots, every card up; the reader watches.</p>
+<bowery-table id="nine" base="bowery/">
+  <script type="application/yaml">
+mode: play
+layout: ledger
+view: all
+table: { seats: 9, stakes: { small_blind: 50.0, big_blind: 100.0 } }
+players:
+  - { seat: 0, stack: 10000, bot: gto }
+  - { seat: 1, stack: 10000, bot: tight_passive }
+  - { seat: 2, stack: 10000, bot: loose_aggressive }
+  - { seat: 3, stack: 10000, bot: tight_aggressive }
+  - { seat: 4, stack: 10000, bot: loose_passive }
+  - { seat: 5, stack: 10000, bot: maniac }
+  - { seat: 6, stack: 10000, bot: abc }
+  - { seat: 7, stack: 10000, bot: short_stack_ninja }
+  - { seat: 8, stack: 10000, bot: gto }
+seed: 9
+delay_ms: 400
+  </script>
+  <p>Nine bots at a 50/100 table.</p>
+</bowery-table>
+
+<h2>Events</h2>
+<pre id="log"></pre>
+<script type="module">
+  const log = document.getElementById('log');
+  for (const name of ['bowery:ready', 'bowery:off-record', 'bowery:hand-over', 'bowery:error']) {
+    document.addEventListener(name, (event) => {
+      log.textContent += `${event.target.id} ${name} ${JSON.stringify(event.detail)}\n`;
+    });
+  }
+</script>
+<script type="module" src="bowery/bowery.js"></script>
+</body>
+</html>

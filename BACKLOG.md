@@ -23,16 +23,13 @@
 - **3a–3d.** `Frame` (`src/frame.rs`), `draw::geometry` with the
   disjoint-boxes proptest, `draw::svg` in ring, spotlight and ledger with 24
   golden SVGs (`tests/golden/`), and `examples/bowery-still.rs`.
+- **4a–4c.** `src/element.rs` and `src/wasm.rs` (`BoweryTable`), the size
+  profile and gate (1,295,901 bytes; gate 1,425,491), `js/bowery.js`,
+  `js/bowery.css`, `demo/index.html` (`make site`, `make serve`).
 - `bin/security-scan` committed (a global excludes file hid it; the Security
   workflow failed on every push).
 
 ## EPIC-20 — open work
-
-### Phase 4 — wasm and the element
-
-- [ ] **4a.** `BoweryTable` (`src/wasm.rs`); size gate.
-- [ ] **4b.** `js/bowery.js`, `js/bowery.css`.
-- [ ] **4c.** `demo/index.html`.
 
 ### Phase 5 — The proof
 

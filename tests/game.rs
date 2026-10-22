@@ -521,3 +521,18 @@ fn game__board_keeps_its_deal_order_to_the_end() {
     assert_ne!(Vec::<String>::new(), boards);
     assert!(boards.iter().all(|board| *board == boards[0]), "{boards:?}");
 }
+
+#[test]
+fn game__hand_over_only_at_the_last_moment() {
+    let mut replay = the_hand("mode: replay\n");
+    assert!(!replay.is_hand_over());
+    replay.seek(replay.moments() - 1).unwrap();
+    assert!(replay.is_hand_over());
+
+    let mut game = play(HEADS_UP_PLAY);
+    assert!(!game.is_hand_over());
+    finish(&mut game, check_or_call);
+    assert!(game.is_hand_over());
+    game.seek(0).unwrap();
+    assert!(!game.is_hand_over());
+}
