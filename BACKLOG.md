@@ -36,8 +36,8 @@
 ### Phase 6 — Release
 
 - [x] **6a.** `release.yml`, `scripts/dist.sh`, versions at 0.1.0 (prepared; nothing published).
-- [ ] **6b.** `v0.1.0`.
-- [ ] **6c.** pkarena0-web: retire EPIC-56.
+- [x] **6b.** `v0.1.0`: crates.io, npm, GitHub release (22 October 2026).
+- [x] **6c.** pkarena0-web: EPIC-56 superseded, embed release removed.
 
 ## Tech debt
 

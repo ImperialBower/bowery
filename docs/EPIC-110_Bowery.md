@@ -11,7 +11,7 @@
 
 ## Status
 
-Phases 0–5 complete; CI green. Phase 6: 6a prepared, `v0.1.0` not yet tagged. Phase numbers and item letters are EPIC-20's.
+**Complete.** v0.1.0 released 22 October 2026 on crates.io, npm and GitHub. Phase numbers and item letters are EPIC-20's.
 
 | Component | Status |
 |---|---|
@@ -21,7 +21,7 @@ Phases 0–5 complete; CI green. Phase 6: 6a prepared, `v0.1.0` not yet tagged. 
 | Phase 3 — `Frame` and `draw::svg`, three layouts, no-overlap proptest | Done — 3a–3d |
 | Phase 4 — wasm surface and `<bowery-table>` | Done — 4a–4c |
 | Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Done — 5a–5d |
-| Phase 6 — release `v0.1.0`: crates.io, npm, tarball | In progress — 6a prepared; 6b (the tag) and 6c wait |
+| Phase 6 — release `v0.1.0`: crates.io, npm, tarball | Done — 6a–6c: v0.1.0 on crates.io, npm (with provenance) and GitHub; pkarena0-web's EPIC-56 superseded |
 
 ### Phase 0 notes
 
@@ -208,3 +208,15 @@ Phases 0–5 complete; CI green. Phase 6: 6a prepared, `v0.1.0` not yet tagged. 
   repository secret. npm uses trusted publishing (OIDC): npmjs.com trusts
   `release.yml` in this repository, so there is no npm token to store or
   leak, and provenance is attached automatically.
+- **6b, released.** Tag `v0.1.0`. crates.io published on the first run.
+  npm failed twice before it published: a 404 while no trusted publisher
+  was set on npmjs.com, then "403 OIDC permission denied for this action"
+  because the trusted publisher's "Allow `npm publish`" was not ticked (only
+  `npm stage publish` was allowed). Both were fixed on npmjs.com, and
+  `gh run rerun --failed` published the same build without running
+  crates.io again. Checked afterwards: crates.io 0.1.0; npm 0.1.0 with
+  provenance; the GitHub release's `bowery-v0.1.0.tar.gz`, all 8 files
+  matching `MANIFEST.sha256`.
+- **6c.** pkarena0-web: EPIC-56 marked superseded, its `release.yml` removed
+  so later releases attach no `pk-table-*.tar.gz`, README and CHANGELOG
+  updated; v0.2.1 and v0.2.2 keep their tarballs.

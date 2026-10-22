@@ -10,8 +10,11 @@ timestamp: '2026-10-22T00:00:00Z'
 
 One tag `vX.Y.Z` publishes three things from one commit, in this order:
 crates.io, then npm, then the GitHub release. The workflow is
-`.github/workflows/release.yml`. Publishing cannot be undone, so a failure
-part-way is fixed with a new patch version, never by deleting or retagging.
+`.github/workflows/release.yml`. Publishing cannot be undone. A step that
+failed before it published anything is fixed outside the repo, then
+`gh run rerun <id> --failed` runs only the failed jobs: v0.1.0's npm step was
+fixed that way. A fix inside the repo needs a new patch version; never delete
+or move a tag.
 
 ## Before tagging
 
@@ -25,8 +28,11 @@ part-way is fixed with a new patch version, never by deleting or retagging.
 4. The repository needs the secret `CARGO_REGISTRY_TOKEN`. npm needs no
    secret: on npmjs.com, `@imperialbower/bowery` → Settings → Trusted
    Publisher names GitHub Actions, `ImperialBower/bowery`, workflow
-   `release.yml`. The npm job's `id-token: write` permission is what proves
-   the publish comes from that workflow.
+   `release.yml`, no environment, and **Allow `npm publish`** ticked. Without
+   that tick only `npm stage publish` is allowed, and the publish fails with
+   "403 OIDC permission denied for this action". With no trusted publisher
+   at all it fails with a 404. The npm job's `id-token: write` permission is
+   what proves the publish comes from that workflow.
 
 ## Tag
 

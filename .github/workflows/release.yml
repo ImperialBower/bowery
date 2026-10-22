@@ -8,14 +8,19 @@
 #
 # scripts/dist.sh is the gate: it refuses a tag that is not both Cargo.toml's
 # and npm/package.json's version, and a wasm over the Makefile's WASM_GATE.
-# Tag a commit whose CI is green. Publishing cannot be undone, so there is
-# no manual re-run: a failed step is fixed with a new patch version.
+# Tag a commit whose CI is green. Publishing cannot be undone. If a step
+# fails before it published anything, fix the cause outside the repo and
+# re-run the failed jobs (`gh run rerun <id> --failed`): the steps that
+# succeeded are not run again. A fix inside the repo needs a new patch
+# version, since a re-run uses the tag's workflow.
 #
 # Secrets: CARGO_REGISTRY_TOKEN (crates.io, publish-update for bowery).
 # npm uses trusted publishing, with no token: npmjs.com trusts this
 # repository's release.yml for @imperialbower/bowery, and the npm job proves
 # it is that workflow with GitHub's OIDC token (id-token: write). It needs
-# npm 11.5.1 or later; Node 24 brings it.
+# npm 11.5.1 or later (Node 24 brings it), and the trusted publisher's
+# "Allow npm publish" ticked: without it npm allows only `npm stage publish`
+# and refuses this one with "403 OIDC permission denied for this action".
 #
 # Third-party actions are pinned to commit SHAs, since what this workflow
 # builds is published; the job that holds CARGO_REGISTRY_TOKEN uses none and
