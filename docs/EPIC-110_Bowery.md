@@ -11,14 +11,14 @@
 
 ## Status
 
-Phases 0 and 1 complete; Phase 2 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
+Phases 0–2 complete; Phase 3 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
 
 | Component | Status |
 |---|---|
 | Phase 0 — repo, numbering, licence, toolchain, release skeleton | Done — 0a–0d |
 | Phase 1 — `Config` and `check` | Done — 1a–1c |
-| Phase 2 — `Game`: replay, takeover, bots, next hand | Done — 2a–2d; waiting for green CI |
-| Phase 3 — `Frame` and `draw::svg`, three layouts, no-overlap proptest | Planned |
+| Phase 2 — `Game`: replay, takeover, bots, next hand | Done — 2a–2d |
+| Phase 3 — `Frame` and `draw::svg`, three layouts, no-overlap proptest | Done — 3a–3d; waiting for green CI |
 | Phase 4 — wasm surface and `<bowery-table>` | Planned |
 | Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Planned |
 | Phase 6 — release `v0.1.0`: crates.io, npm, tarball | Planned |
@@ -82,3 +82,38 @@ Phases 0 and 1 complete; Phase 2 landed, waiting for green CI. Phase numbers and
   (`tests/config/stakes_not_whole.yaml`).
 - `rand` 0.9 (`small_rng`) and `uuid` join the dependencies; both are
   pkcore's versions. pkcore goes to 0.17.3.
+
+### Phase 3 notes
+
+- **3a.** `Frame` (`src/frame.rs`), built by `Game::frame(view)`. The view is
+  applied while the frame is built: in a `seat` view other seats' cards are
+  `CardFace::Down` until a showdown (`frame__seat_view_hides_other_cards`).
+  Beyond EPIC-20's sketch the frame carries `view` and `street`, and each seat
+  its `last` action on the street, which styles its bet slot. `Game::view()`
+  gives the mode's default view.
+- **3b.** `draw::geometry::plan` places every box before anything is drawn.
+  Boxes are sized for their widest text: a 16-character name, an
+  11-character chip count (`format_chips` shortens from a billion: `4.29B`).
+  The proptest (`geometry__boxes_disjoint`, 2,000 cases) covers all three
+  layouts, 2–10 seats, folded strips and widths 320–1,400 px; breaking the
+  ring's spacing on purpose made it fail.
+- **Ring falls back to ledger** below 520 px, as EPIC-20 says, and also where
+  its seats do not fit: from 574 px it has a column of seats on each side, so
+  ten seats fit in the 680 px book column, but 9–10 seats do not fit between
+  520 and 573 px.
+- **3c.** `draw::svg` (`src/draw/mod.rs`): no script, no CSS, nothing hidden,
+  colours as attributes, classes for the page to restyle. One renderer serves
+  all three layouts instead of `ring.rs`, `spotlight.rs` and `ledger.rs`;
+  the layouts differ only in geometry and in how a seat is drawn (plate or
+  row). 24 golden SVGs of The Hand (preflop, flop, river, award × 3 layouts ×
+  light and dark) in `tests/golden/`, compared byte for byte;
+  `BOWERY_BLESS=1 cargo test --test draw` rewrites them for review.
+- **3d.** `examples/bowery-still.rs` takes a config or a bare hand history:
+  `cargo run --example bowery-still -- fixtures/the_hand.yaml --layout spotlight --at river`
+  prints the same SVG as the golden file.
+- The mockup (`docs/EPIC-20_Bowery_mockup.html`) is now copied into bowery,
+  as Phase 0a asked.
+- `Moment`, `Layout` and `View` parse from text (`FromStr`), for
+  `bowery-still` and for Phase 4's `set_layout` and `set_view`.
+- The `make wasm` gate caught a 32-bit overflow in `format_chips` (a
+  trillion does not fit in wasm32's `usize`); it counts in `u64`.

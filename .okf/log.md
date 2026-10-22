@@ -8,3 +8,4 @@
 ## 2026-10-22
 * **Update**: EPIC-20 Phase 2 — `Game`. See [game](concepts/game.md). A check rule added: play's stakes are whole chips.
 * **Update**: pkcore 0.17.3 (DEFECT_041, found here) lets `settle` rebuild a hand from the whole table log; the cut-and-continue workaround is gone, and the rebuilt flop keeps its deal order. See [game](concepts/game.md).
+* **Update**: EPIC-20 Phase 3 — `Frame`, `draw::geometry` (disjoint-boxes proptest), `draw::svg` in three layouts with 24 golden SVGs, `bowery-still`. See [frame and draw](concepts/frame-and-draw.md).

@@ -191,6 +191,25 @@ impl fmt::Display for View {
     }
 }
 
+impl std::str::FromStr for View {
+    type Err = String;
+
+    /// `all` or `seat`, as in YAML.
+    ///
+    /// ```
+    /// use bowery::config::View;
+    ///
+    /// assert_eq!(Ok(View::All), "all".parse::<View>());
+    /// ```
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        match text {
+            "all" => Ok(Self::All),
+            "seat" => Ok(Self::Seat),
+            _ => Err(format!("unknown view `{text}`: expected all or seat")),
+        }
+    }
+}
+
 /// How the table is drawn.
 ///
 /// # Examples
@@ -223,6 +242,28 @@ impl fmt::Display for Layout {
             Self::Spotlight => "spotlight",
             Self::Ledger => "ledger",
         })
+    }
+}
+
+impl std::str::FromStr for Layout {
+    type Err = String;
+
+    /// `ring`, `spotlight` or `ledger`, as in YAML.
+    ///
+    /// ```
+    /// use bowery::config::Layout;
+    ///
+    /// assert_eq!(Ok(Layout::Ledger), "ledger".parse::<Layout>());
+    /// ```
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        match text {
+            "ring" => Ok(Self::Ring),
+            "spotlight" => Ok(Self::Spotlight),
+            "ledger" => Ok(Self::Ledger),
+            _ => Err(format!(
+                "unknown layout `{text}`: expected ring, spotlight or ledger"
+            )),
+        }
     }
 }
 
@@ -310,6 +351,24 @@ impl fmt::Display for Moment {
             Self::Showdown => f.write_str("showdown"),
             Self::Event(index) => write!(f, "event {index}"),
         }
+    }
+}
+
+impl std::str::FromStr for Moment {
+    type Err = String;
+
+    /// A street name or an event index, as in YAML: `river`, `7`.
+    ///
+    /// ```
+    /// use bowery::config::Moment;
+    ///
+    /// assert_eq!(Ok(Moment::Showdown), "showdown".parse::<Moment>());
+    /// ```
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        let repr = text
+            .parse()
+            .map_or_else(|_| MomentRepr::Name(text.to_string()), MomentRepr::Index);
+        Self::try_from(repr)
     }
 }
 
@@ -563,6 +622,25 @@ delay_ms: 300
         for moment in [Moment::Flop, Moment::Turn, Moment::River, Moment::Showdown] {
             assert_eq!(None, moment.index_in(&replay), "{moment}");
         }
+    }
+
+    #[test]
+    fn moment__from_str() {
+        assert_eq!(Ok(Moment::River), "river".parse::<Moment>());
+        assert_eq!(Ok(Moment::Event(7)), "7".parse::<Moment>());
+        assert!("dusk".parse::<Moment>().unwrap_err().contains("dusk"));
+    }
+
+    #[test]
+    fn layout__from_str() {
+        assert_eq!(Ok(Layout::Spotlight), "spotlight".parse::<Layout>());
+        assert!("oval".parse::<Layout>().unwrap_err().contains("oval"));
+    }
+
+    #[test]
+    fn view__from_str() {
+        assert_eq!(Ok(View::Seat), "seat".parse::<View>());
+        assert!("none".parse::<View>().is_err());
     }
 
     #[test]

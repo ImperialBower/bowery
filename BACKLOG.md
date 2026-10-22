@@ -20,17 +20,13 @@
 - **2a–2d.** `Game` (`src/game.rs`): replay over the cursor, takeover on and
   off the record, play with bots and `next_hand`, D1–D5 kernel tests on and
   off the record (`tests/game.rs`).
+- **3a–3d.** `Frame` (`src/frame.rs`), `draw::geometry` with the
+  disjoint-boxes proptest, `draw::svg` in ring, spotlight and ledger with 24
+  golden SVGs (`tests/golden/`), and `examples/bowery-still.rs`.
 - `bin/security-scan` committed (a global excludes file hid it; the Security
   workflow failed on every push).
 
 ## EPIC-20 — open work
-
-### Phase 3 — Frame and draw
-
-- [ ] **3a.** `Frame` with `View` applied at build time.
-- [ ] **3b.** `geometry.rs`; disjoint-boxes proptest (D6, D7).
-- [ ] **3c.** `draw::svg` for ring, spotlight, ledger; 24 golden SVGs.
-- [ ] **3d.** `bowery-still` example binary.
 
 ### Phase 4 — wasm and the element
 

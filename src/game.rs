@@ -61,7 +61,8 @@ use rand::rngs::SmallRng;
 use uuid::Uuid;
 
 use crate::check::{Checked, chips};
-use crate::config::{Config, Mode};
+use crate::config::{Config, Mode, View};
+use crate::frame::Frame;
 
 /// What happened at a moment. It mirrors pkcore's [`ReplayEvent`], and
 /// off the record the game makes the same events itself.
@@ -529,6 +530,78 @@ impl Game {
     #[must_use]
     pub fn event(&self) -> &Event {
         &self.step().event
+    }
+
+    /// What happened at moment `index`, or `None` past the last moment.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::check::check;
+    /// use bowery::config::Config;
+    /// use bowery::game::{Event, Game};
+    ///
+    /// let config = Config::from_yaml("
+    /// mode: play
+    /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
+    /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
+    /// ").unwrap();
+    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// assert_eq!(Some(&Event::Forced), game.event_at(0));
+    /// assert_eq!(None, game.event_at(1));
+    /// ```
+    #[must_use]
+    pub fn event_at(&self, index: usize) -> Option<&Event> {
+        self.line.get(index).map(|step| &step.event)
+    }
+
+    /// The view the config asks for: its `view`, or else `seat` in play and
+    /// `all` in replay and interactive.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::check::check;
+    /// use bowery::config::{Config, View};
+    /// use bowery::game::Game;
+    ///
+    /// let config = Config::from_yaml("
+    /// mode: play
+    /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
+    /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
+    /// ").unwrap();
+    /// assert_eq!(View::Seat, Game::new(check(&config).unwrap()).unwrap().view());
+    /// ```
+    #[must_use]
+    pub fn view(&self) -> View {
+        let config = self.config();
+        config.view.unwrap_or(if config.mode == Mode::Play {
+            View::Seat
+        } else {
+            View::All
+        })
+    }
+
+    /// What is on screen at this moment, through `view`. See [`Frame::new`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::check::check;
+    /// use bowery::config::{Config, View};
+    /// use bowery::game::Game;
+    ///
+    /// let config = Config::from_yaml("
+    /// mode: play
+    /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
+    /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
+    /// ").unwrap();
+    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// assert_eq!(3, game.frame(View::All).pot);
+    /// ```
+    #[must_use]
+    pub fn frame(&self, view: View) -> Frame {
+        Frame::new(self, view)
     }
 
     /// The pkcore table after the moment on screen.

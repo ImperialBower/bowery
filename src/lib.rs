@@ -14,9 +14,13 @@
 //! - [`game`]: one table's game, built from a checked config: the record,
 //!   taking a seat and going off it, play against pkcore's bots, and every
 //!   hand's end as separate moments.
+//! - [`frame`]: what is on screen at one moment, with the view applied, so a
+//!   hidden card is never in it.
+//! - [`draw`]: the one renderer, a frame as SVG in three layouts, with every
+//!   box placed by [`draw::geometry`] before anything is drawn.
 //!
-//! The rest of the kernel (`frame`, `draw`) and the `wasm` feature arrive in
-//! the later phases of bower's EPIC-20.
+//! The `wasm` feature and the `<bowery-table>` element arrive in EPIC-20
+//! Phase 4.
 //!
 //! ## Quick start
 //!
@@ -42,6 +46,8 @@
 
 pub mod check;
 pub mod config;
+pub mod draw;
+pub mod frame;
 pub mod game;
 
 /// Returns the version of this crate, as `Cargo.toml` declares it.

@@ -1,0 +1,109 @@
+<!-- EPIC-20 bowery: the three layouts agreed on 19 October 2026 (ring = B, chosen as default; spotlight = C; ledger = A).
+     A brainstorm fragment: the .options/.option chrome came from the companion frame and is unstyled here. -->
+<style>
+  .pk { font-family: ui-monospace, Menlo, monospace; color:#000; background:#fff; border:2px solid #000; width:680px; max-width:100%; box-sizing:border-box; }
+  .pk * { box-sizing:border-box; }
+  .c { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; width:30px; height:42px; border:2px solid #000; border-radius:4px; background:#fff; font-weight:700; font-size:15px; line-height:1; margin-right:3px; }
+  .c.r { color:#c00000; }
+  .c.back { background:repeating-linear-gradient(45deg,#000 0 3px,#fff 3px 6px); }
+  .c.empty { border-style:dashed; border-color:#999; }
+  .c.sm { width:24px; height:34px; font-size:12px; }
+  .fold { color:#888; }
+  .fold .c { opacity:.25; }
+  .act { display:inline-block; border:2px solid #000; padding:1px 6px; font-weight:700; font-size:12px; }
+  .act.inv { background:#000; color:#fff; }
+  .hero { outline:3px solid #000; outline-offset:-3px; background:#ffe94d; }
+  .ctl { display:flex; gap:6px; align-items:center; border-top:2px solid #000; padding:6px 8px; font-size:13px; }
+  .ctl b.btn { border:2px solid #000; padding:2px 8px; }
+  .ctl .grow { flex:1; }
+  .ttl { margin:28px 0 6px; }
+</style>
+
+<h2>Which table layout reads best in the book column?</h2>
+<p class="subtitle">Same moment in all three: The Hand, river, Hansen bets 205,000, Negreanu to act — all-seeing view. Data straight from pkcore's <code>the_hand.yaml</code>. Black on white; red only for ♥♦. ~680px wide, the chapter column.</p>
+
+<div class="options">
+
+<!-- A: seat rows -->
+<div class="option" data-choice="a" onclick="toggleSelect(this)">
+<div class="letter">A</div>
+<div class="content">
+<h3>Ledger — no felt, one row per seat</h3>
+<p>Board and pot on top; seats are rows. Nothing can overlap. Tallest of the three for 9 seats (~9 × 40px).</p>
+<div class="pk">
+  <div style="display:flex;align-items:center;gap:14px;padding:10px;border-bottom:2px solid #000;">
+    <div><span class="c">9<small>♣</small></span><span class="c r">6<small>♦</small></span><span class="c r">5<small>♥</small></span><span class="c">5<small>♠</small></span><span class="c">8<small>♠</small></span></div>
+    <div style="font-size:22px;font-weight:800;">POT 260,200</div>
+    <div style="margin-left:auto;font-size:12px;text-align:right;">RIVER<br>400/800 · ante 200</div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <tr style="border-bottom:1px solid #000;"><td style="padding:4px 8px;width:30px;"><b>D</b></td><td><b>Gus Hansen</b></td><td><span class="c sm">6<small>♠</small></span><span class="c sm r">6<small>♥</small></span></td><td style="text-align:right;">133,500</td><td style="text-align:right;padding-right:8px;width:150px;"><span class="act inv">BET 205,000</span></td></tr>
+    <tr class="fold" style="border-bottom:1px solid #ccc;"><td style="padding:4px 8px;">SB</td><td>Seat 2</td><td></td><td style="text-align:right;">—</td><td style="text-align:right;padding-right:8px;">fold</td></tr>
+    <tr class="fold" style="border-bottom:1px solid #ccc;"><td style="padding:4px 8px;">BB</td><td>Seat 3</td><td></td><td style="text-align:right;">—</td><td style="text-align:right;padding-right:8px;">fold</td></tr>
+    <tr class="hero" style="border-bottom:1px solid #000;"><td style="padding:4px 8px;">▶</td><td><b>Daniel Negreanu</b></td><td><span class="c sm r">5<small>♦</small></span><span class="c sm">5<small>♣</small></span></td><td style="text-align:right;">201,700</td><td style="text-align:right;padding-right:8px;"><span class="act">TO ACT</span></td></tr>
+    <tr class="fold" style="border-bottom:1px solid #ccc;"><td style="padding:4px 8px;"></td><td>Seat 5</td><td></td><td style="text-align:right;">—</td><td style="text-align:right;padding-right:8px;">fold</td></tr>
+    <tr class="fold"><td style="padding:4px 8px;"></td><td>Seat 6</td><td></td><td style="text-align:right;">—</td><td style="text-align:right;padding-right:8px;">fold</td></tr>
+  </table>
+  <div class="ctl"><b class="btn">⏮</b><b class="btn">◀</b><b class="btn">▶</b><b class="btn">⏭</b><span class="grow">step 14 / 16</span><b class="btn">Take this seat</b><b class="btn">👁 all</b></div>
+</div>
+</div></div>
+
+<!-- B: flat oval -->
+<div class="option" data-choice="b" onclick="toggleSelect(this)">
+<div class="letter">B</div>
+<div class="content">
+<h3>Flat ring — a table shape, but seats sit outside it</h3>
+<p>Plain outlined oval, seats on fixed slots around it, each seat's bet on a reserved inner spot. Reads as "a poker table"; ~300px tall regardless of seat count.</p>
+<div class="pk" style="position:relative;height:300px;">
+  <div style="position:absolute;left:110px;top:55px;width:460px;height:170px;border:3px solid #000;border-radius:85px;"></div>
+  <div style="position:absolute;left:0;right:0;top:95px;text-align:center;">
+    <span class="c">9<small>♣</small></span><span class="c r">6<small>♦</small></span><span class="c r">5<small>♥</small></span><span class="c">5<small>♠</small></span><span class="c">8<small>♠</small></span>
+    <div style="font-size:20px;font-weight:800;margin-top:6px;">POT 260,200</div>
+  </div>
+  <!-- seat 1 Gus left -->
+  <div style="position:absolute;left:6px;top:105px;width:120px;border:2px solid #000;background:#fff;padding:4px;font-size:12px;"><b>Gus Hansen</b> <b style="float:right">D</b><br>133,500<br><span class="c sm">6<small>♠</small></span><span class="c sm r">6<small>♥</small></span></div>
+  <div style="position:absolute;left:150px;top:180px;"><span class="act inv">205,000</span></div>
+  <!-- seat 2/3 top -->
+  <div class="fold" style="position:absolute;left:200px;top:8px;width:110px;border:2px solid #bbb;background:#fff;padding:4px;font-size:12px;">Seat 2 · SB<br>fold</div>
+  <div class="fold" style="position:absolute;left:370px;top:8px;width:110px;border:2px solid #bbb;background:#fff;padding:4px;font-size:12px;">Seat 3 · BB<br>fold</div>
+  <!-- seat 4 Daniel right -->
+  <div class="hero" style="position:absolute;right:6px;top:105px;width:130px;border:2px solid #000;padding:4px;font-size:12px;"><b>Daniel Negreanu</b><br>201,700 · <b>to act</b><br><span class="c sm r">5<small>♦</small></span><span class="c sm">5<small>♣</small></span></div>
+  <!-- seats 5/6 bottom -->
+  <div class="fold" style="position:absolute;left:370px;top:232px;width:110px;border:2px solid #bbb;background:#fff;padding:4px;font-size:12px;">Seat 5<br>fold</div>
+  <div class="fold" style="position:absolute;left:200px;top:232px;width:110px;border:2px solid #bbb;background:#fff;padding:4px;font-size:12px;">Seat 6<br>fold</div>
+</div>
+<div class="pk ctl" style="border-top:none;"><b class="btn">⏮</b><b class="btn">◀</b><b class="btn">▶</b><b class="btn">⏭</b><span class="grow">River · Hansen bets 205,000</span><b class="btn">Take this seat</b><b class="btn">👁 all</b></div>
+</div></div>
+
+<!-- C: heads-up focus -->
+<div class="option" data-choice="c" onclick="toggleSelect(this)">
+<div class="letter">C</div>
+<div class="content">
+<h3>Spotlight — players still in the hand get the space</h3>
+<p>Folded seats collapse to a strip of names; live players are big. Shortest (~200px) and the clearest for a two-player story like this one. Bots mode would start with all seats big.</p>
+<div class="pk">
+  <div class="fold" style="font-size:11px;padding:4px 8px;border-bottom:1px solid #000;">folded: Seat 2 (SB) · Seat 3 (BB) · Seat 5 · Seat 6</div>
+  <div style="display:flex;align-items:stretch;">
+    <div style="flex:1;padding:10px;border-right:2px solid #000;">
+      <div style="font-size:16px;"><b>Gus Hansen</b> · D</div>
+      <div style="font-size:13px;margin:2px 0 6px;">133,500</div>
+      <span class="c">6<small>♠</small></span><span class="c r">6<small>♥</small></span>
+      <div style="margin-top:8px;"><span class="act inv">BET 205,000</span></div>
+    </div>
+    <div style="flex:1.3;padding:10px;text-align:center;">
+      <div style="font-size:11px;">RIVER</div>
+      <span class="c">9<small>♣</small></span><span class="c r">6<small>♦</small></span><span class="c r">5<small>♥</small></span><span class="c">5<small>♠</small></span><span class="c">8<small>♠</small></span>
+      <div style="font-size:22px;font-weight:800;margin-top:8px;">POT 260,200</div>
+    </div>
+    <div class="hero" style="flex:1;padding:10px;border-left:2px solid #000;text-align:right;">
+      <div style="font-size:16px;"><b>Daniel Negreanu</b></div>
+      <div style="font-size:13px;margin:2px 0 6px;">201,700</div>
+      <span class="c r">5<small>♦</small></span><span class="c">5<small>♣</small></span>
+      <div style="margin-top:8px;"><span class="act">TO ACT</span></div>
+    </div>
+  </div>
+  <div class="ctl"><b class="btn">⏮</b><b class="btn">◀</b><b class="btn">▶</b><b class="btn">⏭</b><span class="grow">step 14 / 16</span><b class="btn">Take this seat</b><b class="btn">👁 all</b></div>
+</div>
+</div></div>
+
+</div>
