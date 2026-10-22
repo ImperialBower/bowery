@@ -11,8 +11,16 @@
 # Tag a commit whose CI is green. Publishing cannot be undone, so there is
 # no manual re-run: a failed step is fixed with a new patch version.
 #
-# Secrets: CARGO_REGISTRY_TOKEN (crates.io, publish-update for bowery) and
-# NPM_TOKEN (npm, publish for @imperialbower/bowery).
+# Secrets: CARGO_REGISTRY_TOKEN (crates.io, publish-update for bowery).
+# npm uses trusted publishing, with no token: npmjs.com trusts this
+# repository's release.yml for @imperialbower/bowery, and the npm job proves
+# it is that workflow with GitHub's OIDC token (id-token: write). It needs
+# npm 11.5.1 or later; Node 24 brings it.
+#
+# Third-party actions are pinned to commit SHAs, since what this workflow
+# builds is published; the job that holds CARGO_REGISTRY_TOKEN uses none and
+# installs Rust with the runner's own rustup. Bump a pin by its tag's commit:
+# `git ls-remote https://github.com/<owner>/<action> <ref>`.
 name: Release
 
 on:
@@ -32,11 +40,11 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master, 2026-10-22
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@a4d3f3f761dcd95cce1b72cb61cb6d1963438177 # v2.87.30
         with:
           tool: wasm-pack
       - run: cargo test --features wasm
@@ -64,9 +72,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
+      - name: Rust stable, with the runner's rustup (no third-party action beside the token)
+        run: rustup toolchain install stable --profile minimal && rustup default stable
       - run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
@@ -87,13 +94,12 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-      - name: Verify the manifest, then publish
+      - name: Verify the manifest, then publish (trusted publishing, no token)
         run: |
           set -euo pipefail
           (cd dist/bowery && sha256sum -c MANIFEST.sha256)
-          npm publish ./dist/bowery --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm --version
+          npm publish ./dist/bowery --access public
 
   github:
     name: GitHub release

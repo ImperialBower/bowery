@@ -204,5 +204,7 @@ Phases 0–5 complete; CI green. Phase 6: 6a prepared, `v0.1.0` not yet tagged. 
   the demo and the browser proof (`exclude` in `Cargo.toml`); they ship on
   npm and in the tarball. `cargo publish --dry-run` and `npm pack --dry-run`
   pass: 83 files (88.5 KiB compressed) and 9 files (534.6 kB).
-- **6b and 6c** wait for the tag, which needs the `CARGO_REGISTRY_TOKEN` and
-  `NPM_TOKEN` repository secrets.
+- **6b and 6c** wait for the tag, which needs the `CARGO_REGISTRY_TOKEN`
+  repository secret. npm uses trusted publishing (OIDC): npmjs.com trusts
+  `release.yml` in this repository, so there is no npm token to store or
+  leak, and provenance is attached automatically.

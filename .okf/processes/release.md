@@ -22,7 +22,11 @@ part-way is fixed with a new patch version, never by deleting or retagging.
    `cargo publish --dry-run` and `npm pack --dry-run ./dist/bowery` show what
    would ship.
 3. Push, and wait for CI to be green on that commit.
-4. The repository needs the secrets `CARGO_REGISTRY_TOKEN` and `NPM_TOKEN`.
+4. The repository needs the secret `CARGO_REGISTRY_TOKEN`. npm needs no
+   secret: on npmjs.com, `@imperialbower/bowery` → Settings → Trusted
+   Publisher names GitHub Actions, `ImperialBower/bowery`, workflow
+   `release.yml`. The npm job's `id-token: write` permission is what proves
+   the publish comes from that workflow.
 
 ## Tag
 
