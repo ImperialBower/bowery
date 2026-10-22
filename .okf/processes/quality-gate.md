@@ -31,6 +31,8 @@ runs the same script daily, because new advisories appear every day;
 `.github/workflows/ci.yaml` runs tests on stable, beta and the MSRV, plus
 wasm, clippy, fmt, doc and deny, on every push and monthly.
 
-`bin/security-scan` must be committed. A global git excludes file that
-ignores `bin` directories hides it, and then the Security workflow fails
-with exit 127; the repo `.gitignore` re-includes `/bin/` for that reason.
+`bin/security-scan` and `.tool-versions` must be committed. A global git
+excludes file that ignores `bin` directories and `.tool-versions` hides
+them: the Security workflow then fails with exit 127, and the Browser proof
+job's `actions/setup-node` cannot find its Node version. The repo
+`.gitignore` re-includes `/bin/` and `/.tool-versions` for that reason.
