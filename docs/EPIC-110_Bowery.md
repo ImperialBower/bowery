@@ -11,12 +11,12 @@
 
 ## Status
 
-Phase 0 in progress. Phase numbers and item letters are EPIC-20's.
+Phase 0 and Phase 1 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
 
 | Component | Status |
 |---|---|
-| Phase 0 — repo, numbering, licence, toolchain, release skeleton | In progress — 0a, 0b, 0c done; 0d (wasm CI) landed, waiting for green CI |
-| Phase 1 — `Config` and `check` | Planned |
+| Phase 0 — repo, numbering, licence, toolchain, release skeleton | Done — 0a–0d; 0d waiting for green CI |
+| Phase 1 — `Config` and `check` | Done — 1a–1c; waiting for green CI |
 | Phase 2 — `Game`: replay, takeover, bots, next hand | Planned |
 | Phase 3 — `Frame` and `draw::svg`, three layouts, no-overlap proptest | Planned |
 | Phase 4 — wasm surface and `<bowery-table>` | Planned |
@@ -35,3 +35,20 @@ Phase 0 in progress. Phase numbers and item letters are EPIC-20's.
   `make ayce` and as the `Wasm` job in `.github/workflows/ci.yaml`. The
   `wasm` feature is empty until Phase 4. `cargo test` and clippy
   `-D warnings` were already in CI.
+
+### Phase 1 notes
+
+- **1a.** `Config` (`src/config.rs`): serde, `deny_unknown_fields`,
+  `from_yaml` / `to_yaml`, round-trip test. EPIC-20 left `Moment`,
+  `TableSetup`, `PlayerSetup` and `Controls` unspecified; their shapes are
+  in the rustdoc. `Controls` holds the two toggles EPIC-20 names (👁 view,
+  ▦ layout).
+- **1b.** `check` (`src/check.rs`): 20 fixtures under `tests/config/`, one
+  rule each. Rules beyond EPIC-20's list, because play cannot start without
+  them: play needs `table.stakes` and a stack per player; a seat is not taken
+  twice; a seat is inside `table.seats`.
+- **1c.** `fixtures/the_hand.yaml` (pkcore `v0.17.2`, byte for byte) checks
+  clean. The pre-DEFECT_040 copy fails with hand findings whose rules are
+  exactly {Seats, Result, Money}.
+- pkcore enters at 0.17.2 (EPIC-20 says 0.17.1; 0.17.2 is the current
+  release and the same API).

@@ -1,0 +1,6 @@
+# The table has 11 chairs; the most is 10.
+mode: play
+table: { seats: 11, stakes: { small_blind: 1.0, big_blind: 2.0 } }
+players:
+  - { seat: 0, stack: 200 }
+  - { seat: 1, stack: 200, bot: gto }

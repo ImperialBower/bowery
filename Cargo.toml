@@ -15,6 +15,12 @@ default = []
 wasm = []
 
 [dependencies]
+# The set pkcore's `make check-wasm` builds: no hup-charts (15.8 MB), no
+# rayon, no entropy. `equity` stays on so the bots play at full strength.
+pkcore = { version = "0.17.2", default-features = false, features = ["hand-histories", "bot-profiles", "equity"] }
+serde = { version = "1.0", features = ["derive"] }
+# pkcore's YAML crate, so a config and its inline `hand:` parse the same way.
+serde_yaml_bw = "2.5"
 
 [lints.clippy]
 all = { level = "warn", priority = -1 }

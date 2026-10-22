@@ -14,17 +14,13 @@
   0.0.0 on npm; README badges for both.
 - **0d.** `make wasm` in `make ayce` and CI: wasm32 build with `--features wasm`,
   no wasm-bindgen in the default tree.
+- **1a–1c.** `Config` (`src/config.rs`) and `check` (`src/check.rs`): one
+  failing fixture per rule under `tests/config/`; The Hand checks clean; the
+  pre-DEFECT_040 copy fails with exactly {Seats, Result, Money}.
 - `bin/security-scan` committed (a global excludes file hid it; the Security
   workflow failed on every push).
 
 ## EPIC-20 — open work
-
-### Phase 1 — Config and check
-
-- [ ] **1a.** `Config` with serde and `deny_unknown_fields`; round-trip test.
-- [ ] **1b.** `check`: every config rule, each with a failing fixture under `tests/config/`.
-- [ ] **1c.** `fixtures/the_hand.yaml` checks clean; the pre-DEFECT_040 copy fails
-  with exactly {Seats, Result, Money}.
 
 ### Phase 2 — Game
 

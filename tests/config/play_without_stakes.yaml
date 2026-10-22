@@ -1,0 +1,5 @@
+# Play needs table.stakes.
+mode: play
+players:
+  - { seat: 0, stack: 200 }
+  - { seat: 1, stack: 200, bot: gto }

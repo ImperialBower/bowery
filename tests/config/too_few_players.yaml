@@ -1,0 +1,5 @@
+# One player is not a table.
+mode: play
+table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
+players:
+  - { seat: 0, stack: 200 }

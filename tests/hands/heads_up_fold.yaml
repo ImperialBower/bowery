@@ -1,0 +1,18 @@
+# Heads-up, NL 50/100. Seat 0 (button, small blind) folds. No street is
+# dealt and nobody shows down.
+pkcore_version: "0.17.2"
+format_version: 1
+hand:
+  id: heads_up_fold
+  game: holdem
+table:
+  seats: 2
+  button: 0
+  stakes: { small_blind: 50.0, big_blind: 100.0 }
+players:
+  - { seat: 0, name: Deep, stack: 1000.0, hole_cards: "7♦ 2♣" }
+  - { seat: 1, name: Short, stack: 200.0, hole_cards: "A♠ A♥" }
+streets:
+  preflop:
+    actions:
+      - { seat: 0, action: fold }

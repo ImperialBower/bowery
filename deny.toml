@@ -15,6 +15,10 @@ ignore = []
 allow = [
     "MIT",
     "Apache-2.0",
+    # sha1_smol, through pkcore's uuid.
+    "BSD-3-Clause",
+    # unicode-ident, through serde_derive's proc-macro2.
+    "Unicode-3.0",
 ]
 confidence-threshold = 0.8
 exceptions = []

@@ -1,0 +1,31 @@
+# Seat 5 has nobody in a heads-up hand.
+mode: interactive
+seat: 5
+hand:
+  pkcore_version: "0.17.2"
+  format_version: 1
+  hand:
+    id: heads_up_all_in
+    game: holdem
+  table:
+    seats: 2
+    button: 0
+    stakes: { small_blind: 50.0, big_blind: 100.0 }
+  players:
+    - { seat: 0, name: Deep, stack: 1000.0, hole_cards: "7♦ 2♣" }
+    - { seat: 1, name: Short, stack: 200.0, hole_cards: "A♠ A♥" }
+  board: "K♠ K♣ 9♦ 8♠ 4♥"
+  streets:
+    preflop:
+      actions:
+        - { seat: 0, action: all_in, all_in: true }
+        - { seat: 1, action: all_in, all_in: true }
+    flop:
+      cards: "K♠ K♣ 9♦"
+      actions: []
+    turn:
+      card: "8♠"
+      actions: []
+    river:
+      card: "4♥"
+      actions: []
