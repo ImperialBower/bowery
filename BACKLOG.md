@@ -35,7 +35,7 @@
 
 ### Phase 6 — Release
 
-- [ ] **6a.** `release.yml`: tag → crates.io, npm, tarball with `MANIFEST.sha256`.
+- [x] **6a.** `release.yml`, `scripts/dist.sh`, versions at 0.1.0 (prepared; nothing published).
 - [ ] **6b.** `v0.1.0`.
 - [ ] **6c.** pkarena0-web: retire EPIC-56.
 

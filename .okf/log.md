@@ -12,3 +12,4 @@
 * **Update**: EPIC-20 Phase 4 — `element` and `wasm` behind the `wasm` feature, the size profile and gate (1,295,901 bytes; gate 1,425,491), `js/bowery.js`, `js/bowery.css`, the demo. See [the element](concepts/element.md).
 * **Update**: EPIC-20 Phase 5 — Playwright in `tests/e2e/` (D1–D8, multi, origin, fallback); found and fixed a first-frame width bug. See [browser proof](concepts/browser-proof.md).
 * **Update**: `.tool-versions` was hidden by the same global excludes file as `bin/`; `.gitignore` re-includes it (CI `Browser proof` failed on `setup-node`).
+* **Update**: EPIC-20 Phase 6a prepared — `scripts/dist.sh`, `release.yml`, `npm/package.json`, `CHANGELOG.md`, versions at 0.1.0; nothing published. See [release](processes/release.md).

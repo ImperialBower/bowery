@@ -1,0 +1,126 @@
+# The release (EPIC-20 § Release, 6a): one tag vX.Y.Z publishes three things
+# built from one commit, in order, each only if the one before succeeded:
+#
+#   1. crates.io  bowery (the rlib, for bower)
+#   2. npm        @imperialbower/bowery (dist/bowery/: the element, the glue,
+#                 the wasm, the licences, MANIFEST.sha256)
+#   3. GitHub     bowery-vX.Y.Z.tar.gz, the same files as one flat directory
+#
+# scripts/dist.sh is the gate: it refuses a tag that is not both Cargo.toml's
+# and npm/package.json's version, and a wasm over the Makefile's WASM_GATE.
+# Tag a commit whose CI is green. Publishing cannot be undone, so there is
+# no manual re-run: a failed step is fixed with a new patch version.
+#
+# Secrets: CARGO_REGISTRY_TOKEN (crates.io, publish-update for bowery) and
+# NPM_TOKEN (npm, publish for @imperialbower/bowery).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+env:
+  TAG: ${{ github.ref_name }}
+
+jobs:
+  build:
+    name: Build and check
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+      - run: cargo test --features wasm
+      - run: make pkg
+      - name: The release directory (asserts the tag is both versions, the wasm under the gate)
+        run: scripts/dist.sh dist/bowery --tag "$TAG"
+      - name: Tarball
+        run: |
+          set -euo pipefail
+          tar czf "bowery-$TAG.tar.gz" -C dist/bowery .
+          ls -l "bowery-$TAG.tar.gz" dist/bowery
+          cat dist/bowery/MANIFEST.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: |
+            dist/bowery
+            bowery-${{ github.ref_name }}.tar.gz
+          if-no-files-found: error
+
+  crates:
+    name: crates.io
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  npm:
+    name: npm
+    needs: crates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Verify the manifest, then publish
+        run: |
+          set -euo pipefail
+          (cd dist/bowery && sha256sum -c MANIFEST.sha256)
+          npm publish ./dist/bowery --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  github:
+    name: GitHub release
+    needs: npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: artifact
+      - name: Release with the CHANGELOG section as its notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          awk -v heading="## [$version]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "See CHANGELOG.md." > notes.md
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --notes-file notes.md
+          fi
+          gh release upload "$TAG" "artifact/bowery-$TAG.tar.gz" --clobber

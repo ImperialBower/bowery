@@ -1,0 +1,30 @@
+{
+  "name": "@imperialbower/bowery",
+  "version": "0.1.0",
+  "description": "One poker table control, configured not compiled: <bowery-table>.",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "main": "bowery.js",
+  "exports": {
+    ".": "./bowery.js",
+    "./bowery.css": "./bowery.css"
+  },
+  "files": [
+    "bowery.js",
+    "bowery.css",
+    "bowery_wasm.js",
+    "bowery_wasm_bg.wasm",
+    "LICENSE-MIT",
+    "LICENSE-APACHE",
+    "MANIFEST.sha256",
+    "README.md"
+  ],
+  "sideEffects": true,
+  "keywords": ["poker", "web-component", "custom-element", "wasm", "svg", "hand-history"],
+  "homepage": "https://github.com/ImperialBower/bowery",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ImperialBower/bowery.git"
+  },
+  "bugs": "https://github.com/ImperialBower/bowery/issues"
+}

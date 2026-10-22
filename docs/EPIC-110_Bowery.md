@@ -11,7 +11,7 @@
 
 ## Status
 
-Phases 0–4 complete; Phase 5 landed, waiting for green CI. Phase numbers and item letters are EPIC-20's.
+Phases 0–5 complete; CI green. Phase 6: 6a prepared, `v0.1.0` not yet tagged. Phase numbers and item letters are EPIC-20's.
 
 | Component | Status |
 |---|---|
@@ -20,8 +20,8 @@ Phases 0–4 complete; Phase 5 landed, waiting for green CI. Phase numbers and i
 | Phase 2 — `Game`: replay, takeover, bots, next hand | Done — 2a–2d |
 | Phase 3 — `Frame` and `draw::svg`, three layouts, no-overlap proptest | Done — 3a–3d |
 | Phase 4 — wasm surface and `<bowery-table>` | Done — 4a–4c |
-| Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Done — 5a–5d; waiting for green CI |
-| Phase 6 — release `v0.1.0`: crates.io, npm, tarball | Planned |
+| Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Done — 5a–5d |
+| Phase 6 — release `v0.1.0`: crates.io, npm, tarball | In progress — 6a prepared; 6b (the tag) and 6c wait |
 
 ### Phase 0 notes
 
@@ -186,3 +186,23 @@ Phases 0–4 complete; Phase 5 landed, waiting for green CI. Phase numbers and i
   ledger from the first frame` fails on the old element.
 - The board is now one `<g class="board">` (the 24 golden SVGs changed by
   that wrapper only), so tests can find it.
+
+### Phase 6 notes
+
+- **6a, prepared.** `scripts/dist.sh` writes `dist/bowery/` (`make dist`),
+  which is both the npm package and the tarball's contents, with
+  `MANIFEST.sha256`. Before writing anything it refuses: a `Cargo.toml` and
+  `npm/package.json` version that differ, a tag that is not that version,
+  a wasm over `WASM_GATE`, and any `@import` or `url(` in `bowery.css`.
+  `.github/workflows/release.yml` runs on a `v*` tag: build and check, then
+  `cargo publish`, then `npm publish --provenance`, then the GitHub release
+  with `bowery-vX.Y.Z.tar.gz` and the CHANGELOG section as notes, each only
+  after the one before. There is no manual re-run: a failed publish is
+  fixed with a new patch version.
+- **Versions at 0.1.0** in `Cargo.toml` and `npm/package.json`;
+  `CHANGELOG.md` has the `[0.1.0]` section. The crate excludes the element,
+  the demo and the browser proof (`exclude` in `Cargo.toml`); they ship on
+  npm and in the tarball. `cargo publish --dry-run` and `npm pack --dry-run`
+  pass: 83 files (88.5 KiB compressed) and 9 files (534.6 kB).
+- **6b and 6c** wait for the tag, which needs the `CARGO_REGISTRY_TOKEN` and
+  `NPM_TOKEN` repository secrets.

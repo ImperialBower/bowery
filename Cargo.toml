@@ -1,12 +1,19 @@
 [package]
 name = "bowery"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.99.0"
 description = "One poker table control, configured not compiled: <bowery-table>."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ImperialBower/bowery"
+homepage = "https://github.com/ImperialBower/bowery"
+documentation = "https://docs.rs/bowery"
 readme = "README.md"
+keywords = ["poker", "svg", "wasm", "hand-history", "web-component"]
+categories = ["games", "wasm", "visualization"]
+# The crate is the kernel and its tests; the element, the demo and the
+# browser proof ship on npm and in the release tarball.
+exclude = ["/.github", "/.okf", "/demo", "/js", "/npm", "/scripts", "/tests/e2e", "/docs", "/bin", "/AI-BOM.md", "/BACKLOG.md", "/CLAUDE.md"]
 
 [lib]
 # rlib for bower and native use; cdylib for the browser build.

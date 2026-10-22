@@ -1,5 +1,6 @@
 /target
 /pkg
+/dist
 /site
 .idea/
 # CI runs ./bin/security-scan; keep bin/ tracked even when a global
