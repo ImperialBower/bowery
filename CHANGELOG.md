@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-10-22
+
+### Changed
+
+- **Releases need no stored tokens.** The release workflow publishes to
+  crates.io and npm by trusted publishing (OIDC): each registry trusts this
+  repository's `release.yml`, and the tokens it uses last one job.
+- **README.** The CDN example names 0.1.1, and a note says how to check a
+  release: `npm audit signatures` for the npm package's provenance,
+  `MANIFEST.sha256` for the tarball.
+
 ## [0.1.0] - 2026-10-22
 
 The first release: bower's EPIC-20, as bowery's EPIC-110

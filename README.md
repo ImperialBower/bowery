@@ -24,7 +24,7 @@ bower's [EPIC-20](https://github.com/ImperialBower/bower/blob/main/docs/EPIC-20_
 ## In a web page
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.1.0/bowery.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.1.1/bowery.js"></script>
 
 <bowery-table>
   <script type="application/yaml">
@@ -47,6 +47,12 @@ one flat directory whose files `MANIFEST.sha256` lists. A config can also
 come from a file (`src="table.yaml"`), and `mode: replay` or
 `mode: interactive` take a recorded pkcore hand history as `hand:`. The
 config's fields are documented on [`Config`](https://docs.rs/bowery/latest/bowery/config/struct.Config.html).
+
+Every release is built and published by this repository's
+[release workflow](.github/workflows/release.yml), with no stored tokens
+(trusted publishing to crates.io and npm). To check what you installed:
+`npm audit signatures` verifies the npm package's provenance, and
+`sha256sum -c MANIFEST.sha256` verifies an unpacked release tarball.
 
 ## In Rust
 
