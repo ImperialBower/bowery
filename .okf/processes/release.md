@@ -25,8 +25,11 @@ or move a tag.
    `cargo publish --dry-run` and `npm pack --dry-run ./dist/bowery` show what
    would ship.
 3. Push, and wait for CI to be green on that commit.
-4. The repository needs the secret `CARGO_REGISTRY_TOKEN`. npm needs no
-   secret: on npmjs.com, `@imperialbower/bowery` → Settings → Trusted
+4. No secrets. Both registries use trusted publishing. On crates.io, the
+   crate's **Settings → Trusted Publishing** names GitHub `ImperialBower` /
+   `bowery`, workflow `release.yml`, no environment; the crates.io job trades
+   GitHub's OIDC token for a short-lived token through
+   `rust-lang/crates-io-auth-action`. On npmjs.com, `@imperialbower/bowery` → Settings → Trusted
    Publisher names GitHub Actions, `ImperialBower/bowery`, workflow
    `release.yml`, no environment, and **Allow `npm publish`** ticked. Without
    that tick only `npm stage publish` is allowed, and the publish fails with

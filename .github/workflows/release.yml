@@ -14,7 +14,12 @@
 # succeeded are not run again. A fix inside the repo needs a new patch
 # version, since a re-run uses the tag's workflow.
 #
-# Secrets: CARGO_REGISTRY_TOKEN (crates.io, publish-update for bowery).
+# Secrets: none. Both registries use trusted publishing (OIDC): crates.io
+# and npmjs.com each trust this repository's release.yml, and the publishing
+# job proves it is that workflow with GitHub's OIDC token (id-token: write).
+# crates.io: the crate's Settings -> Trusted Publishing names ImperialBower,
+# bowery, release.yml; rust-lang/crates-io-auth-action trades the OIDC token
+# for a short-lived publish token and revokes it when the job ends.
 # npm uses trusted publishing, with no token: npmjs.com trusts this
 # repository's release.yml for @imperialbower/bowery, and the npm job proves
 # it is that workflow with GitHub's OIDC token (id-token: write). It needs
@@ -23,8 +28,8 @@
 # and refuses this one with "403 OIDC permission denied for this action".
 #
 # Third-party actions are pinned to commit SHAs, since what this workflow
-# builds is published; the job that holds CARGO_REGISTRY_TOKEN uses none and
-# installs Rust with the runner's own rustup. Bump a pin by its tag's commit:
+# builds is published; the crates.io job uses only the Rust project's own
+# auth action, and installs Rust with the runner's own rustup. Bump a pin by its tag's commit:
 # `git ls-remote https://github.com/<owner>/<action> <ref>`.
 name: Release
 
@@ -75,13 +80,19 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
-      - name: Rust stable, with the runner's rustup (no third-party action beside the token)
+      - name: Rust stable, with the runner's rustup
         run: rustup toolchain install stable --profile minimal && rustup default stable
+      - name: A short-lived crates.io token for this workflow (trusted publishing)
+        id: auth
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
       - run: cargo publish
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
   npm:
     name: npm
