@@ -15,3 +15,6 @@
 * **Update**: EPIC-20 Phase 6a prepared — `scripts/dist.sh`, `release.yml`, `npm/package.json`, `CHANGELOG.md`, versions at 0.1.0; nothing published. See [release](processes/release.md).
 * **Update**: v0.1.0 released (crates.io, npm with provenance, GitHub). npm trusted publishing needed "Allow npm publish" ticked; see [release](processes/release.md).
 * **Update**: v0.1.1 released, the first with no stored tokens. `scripts/dist.sh` now also checks that the README's CDN link names the crate version; the link stays exact. See [release](processes/release.md).
+
+## 2026-10-23
+* **Update**: `/backlog` review pass after v0.1.1: 25 machine-suggested findings in `docs/TECHNICAL_DEBT.md` (🤖), five checked by hand — keyboard seek in the shadow DOM, non-atomic `next_hand`, the unapplied `table:` override, missing play rules in `check`, unpinned `actions/*` in `release.yml`.
