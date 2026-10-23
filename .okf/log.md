@@ -18,3 +18,4 @@
 
 ## 2026-10-23
 * **Update**: `/backlog` review pass after v0.1.1: 25 machine-suggested findings in `docs/TECHNICAL_DEBT.md` (🤖), five checked by hand — keyboard seek in the shadow DOM, non-atomic `next_hand`, the unapplied `table:` override, missing play rules in `check`, unpinned `actions/*` in `release.yml`.
+* **Update**: three review bugs fixed test-first — keyboard seek in the shadow DOM (`composedPath`), `check` play rules (button on the table, blinds and stacks at least 1, big ≥ small), `check` refuses `table` beside a recorded hand. `next_hand` non-atomicity probed: not observable; covered by a test. See [config and check](concepts/config-and-check.md).

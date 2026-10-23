@@ -32,5 +32,13 @@ fails if a fixture has no `check__<name>` test.
 - `tests/hands/DEFECT_040_the_hand_before.yaml` starts with a `---` document
   marker, so it cannot be inlined by indenting its lines. Tests set
   `config.hand` from `HandHistory::from_yaml` instead.
+- Play tables the engine cannot run (probed 2026-10-23, pkcore 0.17.3): a
+  blind of 0 fails `Game::new` with "Insufficient chips"; a button off the
+  table plays the hand, then fails to settle (`validate` refuses the rebuilt
+  hand's `table.button`); a stack of 0 deals the player in but refuses their
+  every action. `check` refuses all three. A button on an empty chair plays
+  fine.
+- A recorded hand brings its own table, so `check` refuses `table` beside
+  one (it was once documented as an override and did nothing).
 
 See the [quality gate](../processes/quality-gate.md).

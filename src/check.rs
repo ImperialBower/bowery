@@ -6,8 +6,11 @@
 //! its findings come back as [`Problem::Hand`]. The rest are bowery's own
 //! [`Problem::Config`] rules:
 //!
-//! - **mode:** replay and interactive need a `hand`; play needs
-//!   `table.stakes`, in whole chips, and a `stack` for every player.
+//! - **mode:** replay and interactive need a `hand` and take no `table` (the
+//!   hand brings its own); play needs
+//!   `table.stakes`, in whole chips, with each blind at least 1 and the big
+//!   blind no smaller than the small; a `table.button` at one of the chairs;
+//!   and a `stack` of at least 1 for every player.
 //! - **seat:** `seat` has a player in it.
 //! - **start:** `start` needs a `hand`, and the hand reaches it.
 //! - **players:** with a `hand`, each player's seat is in the hand and a given
@@ -38,7 +41,7 @@ use std::str::FromStr;
 use pkcore::bot::profile::BotProfile;
 use pkcore::card::Card;
 use pkcore::cards::Cards;
-use pkcore::hand_history::{Finding, HandHistory};
+use pkcore::hand_history::{Finding, HandHistory, Stakes};
 
 use crate::config::{Config, Mode};
 
@@ -201,34 +204,97 @@ fn mode(config: &Config, problems: &mut Vec<Problem>) {
                 .and_then(|table| table.stakes.as_ref())
             {
                 None => problems.push(Problem::config("table.stakes", "play needs the blinds")),
-                Some(stakes) => {
-                    let named = [
-                        ("small_blind", Some(stakes.small_blind)),
-                        ("big_blind", Some(stakes.big_blind)),
-                        ("ante", stakes.ante),
-                    ];
-                    for (name, value) in named {
-                        if let Some(value) = value
-                            && chips(value).is_none()
-                        {
-                            problems.push(Problem::config(
-                                format!("table.stakes.{name}"),
-                                format!("{value} is not a whole number of chips"),
-                            ));
-                        }
-                    }
-                }
+                Some(stakes) => play_stakes(stakes, problems),
             }
+            play_button(config, problems);
             for (index, player) in config.players.iter().enumerate() {
-                if player.stack.is_none() {
-                    problems.push(Problem::config(
-                        format!("players[{index}].stack"),
-                        format!("seat {} needs a stack in play", player.seat),
-                    ));
-                }
+                let message = match player.stack {
+                    None => format!("seat {} needs a stack in play", player.seat),
+                    Some(0) => format!("seat {} needs chips to play", player.seat),
+                    Some(_) => continue,
+                };
+                problems.push(Problem::config(format!("players[{index}].stack"), message));
             }
         }
+        Mode::Replay | Mode::Interactive if config.table.is_some() => {
+            problems.push(Problem::config(
+                "table",
+                format!(
+                    "{} plays the recorded hand's own table; drop `table`",
+                    config.mode
+                ),
+            ));
+        }
         Mode::Replay | Mode::Interactive => {}
+    }
+}
+
+/// Play's stakes are whole chips, each blind is at least one chip, and the
+/// big blind is no smaller than the small blind. pkcore's engine refuses to
+/// post a blind of nothing.
+fn play_stakes(stakes: &Stakes, problems: &mut Vec<Problem>) {
+    let named = [
+        ("small_blind", Some(stakes.small_blind)),
+        ("big_blind", Some(stakes.big_blind)),
+        ("ante", stakes.ante),
+    ];
+    for (name, value) in named {
+        if let Some(value) = value
+            && chips(value).is_none()
+        {
+            problems.push(Problem::config(
+                format!("table.stakes.{name}"),
+                format!("{value} is not a whole number of chips"),
+            ));
+        }
+    }
+    for (name, value) in [
+        ("small_blind", stakes.small_blind),
+        ("big_blind", stakes.big_blind),
+    ] {
+        if chips(value) == Some(0) {
+            problems.push(Problem::config(
+                format!("table.stakes.{name}"),
+                "a blind is at least 1 chip",
+            ));
+        }
+    }
+    if stakes.big_blind < stakes.small_blind {
+        problems.push(Problem::config(
+            "table.stakes.big_blind",
+            format!(
+                "{} is smaller than the small blind, {}",
+                stakes.big_blind, stakes.small_blind
+            ),
+        ));
+    }
+}
+
+/// Play's button is at one of the table's chairs: `table.seats` of them, or
+/// one past the highest seat (at least two) when `seats` is not given, as
+/// the game builds the table.
+fn play_button(config: &Config, problems: &mut Vec<Problem>) {
+    let Some(table) = &config.table else {
+        return;
+    };
+    let Some(button) = table.button else {
+        return;
+    };
+    let highest = config
+        .players
+        .iter()
+        .map(|player| player.seat)
+        .max()
+        .unwrap_or(0);
+    let chairs = table.seats.unwrap_or(highest.saturating_add(1)).max(2);
+    if button >= chairs {
+        problems.push(Problem::config(
+            "table.button",
+            format!(
+                "the button is on seat {button}, off a {chairs}-chair table (seats 0 to {})",
+                chairs - 1
+            ),
+        ));
     }
 }
 

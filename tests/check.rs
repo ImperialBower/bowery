@@ -151,6 +151,31 @@ fn check__player_seat_off_the_table() {
 }
 
 #[test]
+fn check__play_button_off_the_table() {
+    assert_one_config_problem("play_button_off_the_table", "table.button");
+}
+
+#[test]
+fn check__play_blind_zero() {
+    assert_one_config_problem("play_blind_zero", "table.stakes.small_blind");
+}
+
+#[test]
+fn check__play_blinds_inverted() {
+    assert_one_config_problem("play_blinds_inverted", "table.stakes.big_blind");
+}
+
+#[test]
+fn check__play_stack_zero() {
+    assert_one_config_problem("play_stack_zero", "players[0].stack");
+}
+
+#[test]
+fn check__replay_with_table() {
+    assert_one_config_problem("replay_with_table", "table");
+}
+
+#[test]
 fn check__every_fixture_has_a_test() {
     let source = include_str!("check.rs");
     for entry in fs::read_dir("tests/config").unwrap() {

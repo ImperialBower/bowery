@@ -42,10 +42,10 @@ for the same seed (`src/game.rs:359`, `src/game.rs:429`).
 🤖 The 2026-10-23 review pass added 25 findings. These five were checked
 against the code by hand:
 
-- [ ] 🤖 Keyboard seek eats arrow keys in the bet box and seat picker (`js/bowery.js:309`).
-- [ ] 🤖 `next_hand` mutates, then can fail; a retry ends the hand twice (`src/game.rs:1087`).
-- [ ] 🤖 `table:` override is documented and checked but never applied (`src/game.rs:1201`).
-- [ ] 🤖 `check` misses play rules: button, blinds, zero stacks (`src/check.rs:189`).
+- [x] 🤖 Keyboard seek eats arrow keys in the bet box and seat picker (`js/bowery.js:309`).
+- [ ] 🤖 `next_hand` mutates, then can fail (`src/game.rs:1087`). Checked: not observable today; test added.
+- [x] 🤖 `table:` override is documented and checked but never applied (`src/game.rs:1201`).
+- [x] 🤖 `check` misses play rules: button, blinds, zero stacks (`src/check.rs:189`).
 - [ ] 🤖 `actions/*` unpinned in the publishing jobs (`.github/workflows/release.yml:53`).
 
 See [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md).

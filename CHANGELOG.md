@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Arrow keys in the controls.** Arrow, Home and End in the seat picker or
+  a bet box no longer seek moments; they seek only when the table itself has
+  focus.
+- **`check` refuses play tables the game cannot run:** a button off the
+  table, a blind of 0, a big blind smaller than the small blind, and a stack
+  of 0.
+- **`check` refuses `table` beside a recorded hand.** It was documented as an
+  override but did nothing; replay and interactive play the hand's own table.
+
 ### Changed
 
 - **The release checks the README.** `scripts/dist.sh` refuses a README whose

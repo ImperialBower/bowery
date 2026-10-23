@@ -21,27 +21,40 @@ are as the reviewer reported them.
 
 ### Likely bugs
 
-- [ ] 🤖 ✔ **Keyboard seek eats keys in the bet box and seat picker** — `_key`
+- [x] 🤖 ✔ **Keyboard seek eats keys in the bet box and seat picker** — `_key`
   listens on the host, and shadow-DOM events are retargeted to the host, so
   `event.target !== this` never filters them. Arrow, Home and End in the
   `<input type=number>` and `<select>` seek moments instead. Suggested: use
   `event.composedPath()[0] === this`; add a Playwright keyboard test.
   (`js/bowery.js:309-322`, listener at `js/bowery.js:203`)
-- [ ] 🤖 ✔ **`next_hand` is not atomic** — it ends the hand, eliminates the
+  **Fixed 2026-10-23** as suggested; `tests/e2e/keyboard.spec.ts`.
+- [ ] 🤖 ✔ **`next_hand` is not atomic** (not observable) — it ends the hand, eliminates the
   busted, bumps `hand_number`, then can fail (`TableBroken`, or `deal`'s `?`)
   with `line`/`at` still on the old hand; a retry calls `end_hand` twice.
   Suggested: do the fallible steps first; commit `hand_number` and `line` only
   after `deal` succeeds. (`src/game.rs:1087-1125`)
-- [ ] 🤖 ✔ **`table:` override is documented but never applied** — `Config`
+  **Checked 2026-10-23:** a second call after `TableBroken` gives
+  `TableBroken` again with the table, moments and hand number unchanged
+  (`game__next_hand_on_a_broken_table_changes_nothing`), and `deal` cannot
+  fail on a checked config. The ordering is still fragile; reorder it if
+  `deal` ever gains a reachable error.
+- [x] 🤖 ✔ **`table:` override is documented but never applied** — `Config`
   says `table` overrides a recorded hand's table, but `open_record` never reads
   it, while `check` still validates it: a false "checked". Suggested: apply it,
   or have `check` reject `table.button`/`table.stakes` alongside a `hand`; fix
   the doc either way. (`src/config.rs:63-65`, `src/game.rs:1201-1232`)
-- [ ] 🤖 ✔ **`check` misses play-table rules** — no button rule (past the
+  **Fixed 2026-10-23:** `check` refuses `table` beside a recorded hand; docs
+  say play only. Fixture `replay_with_table`.
+- [x] 🤖 ✔ **`check` misses play-table rules** — no button rule (past the
   chairs or on an empty chair), zero or inverted blinds, zero stacks. A checked
   config can still hit `Setup`/`Engine`, against `Game::new`'s promise.
   Suggested: `check` rules for button in range, `big_blind >= small_blind > 0`,
   `stack > 0`. (`src/check.rs:189-233`, `src/game.rs:1348`)
+  **Fixed 2026-10-23:** button off the table, a zero blind and a zero stack
+  each broke the game (probed); `big_blind < small_blind` played but is
+  refused too. A button on an empty chair plays fine and stays allowed.
+  Fixtures `play_button_off_the_table`, `play_blind_zero`,
+  `play_blinds_inverted`, `play_stack_zero`.
 - [ ] 🤖 **Chair-count rule skipped in play without `table.seats`** — `players:
   [{seat: 200}, {seat: 1}]` builds a 201-chair table; seat 255 passes `check`
   and fails in `play_table`. Suggested: derive the implicit chair count in
@@ -140,7 +153,10 @@ are as the reviewer reported them.
 - [ ] 🤖 **`deck_fault` re-tokenizes the deck** — its own separators and
   `DECK_SIZE` can disagree with pkcore's parser and give odd messages
   ("has 1 cards", "`` is not a card"). Suggested: count from the parsed
-  `Cards`. (`src/check.rs:400-424`)
+  `Cards`. (`src/check.rs:400-424`) **Note:** the suggested fix is wrong as
+  written: `Cards::from_str` drops a repeated card silently, which is why the
+  rule counts tokens (`.okf/concepts/config-and-check.md`). Only the odd
+  messages are real.
 - [ ] 🤖 **Single-letter names** — `Rect { x, y, w, h }` and `w`/`h` locals.
   Suggested: `width`/`height` at least. (`src/draw/geometry.rs:82-91`,
   `src/draw/mod.rs:366,486,557`)

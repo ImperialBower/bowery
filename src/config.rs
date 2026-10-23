@@ -60,7 +60,9 @@ pub struct Config {
     /// Where the table opens.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start: Option<Moment>,
-    /// Seats, button and stakes for play, or overrides.
+    /// Seats, button and stakes for play. Replay and interactive take the
+    /// recorded hand's own table, and [`check`](crate::check::check) refuses
+    /// a `table` beside one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<TableSetup>,
     /// Who sits where: name, stack and bot per seat.
@@ -411,8 +413,8 @@ impl From<Moment> for MomentRepr {
 
 /// The table itself: how many seats, where the button is, the stakes.
 ///
-/// In play it sets the table up; with a recorded hand it overrides the
-/// hand's own `table`.
+/// Play only: it sets the table up. A recorded hand brings its own table,
+/// so replay and interactive refuse this.
 ///
 /// # Examples
 ///
