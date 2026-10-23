@@ -1,48 +1,48 @@
 # Backlog
 
-> Maintained by the `/backlog` skill. Refreshed 2026-10-21. The contract is
-> bower's [EPIC-20](https://github.com/ImperialBower/bower/blob/main/docs/EPIC-20_Bowery.md)
-> (work items below are its numbering). Debt detail lives in
-> [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md).
+> Maintained by the `/backlog` skill. Refreshed 2026-10-23. Debt detail lives
+> in [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md). Items tagged 🤖 are
+> machine-suggested: keep, edit or delete them.
 
 ## Recently completed
 
-- **0a.** Repo scaffolded from `/dev-playbook rust` (`8c9b9e2`).
-- **0b.** pkcore `ROADMAP.md` registers EPIC-110–119; `docs/EPIC-110_Bowery.md`
-  points to bower's EPIC-20.
-- **0c.** Names reserved: `bowery` 0.0.0 on crates.io, `@imperialbower/bowery`
-  0.0.0 on npm; README badges for both.
-- **0d.** `make wasm` in `make ayce` and CI: wasm32 build with `--features wasm`,
-  no wasm-bindgen in the default tree.
-- **1a–1c.** `Config` (`src/config.rs`) and `check` (`src/check.rs`): one
-  failing fixture per rule under `tests/config/`; The Hand checks clean; the
-  pre-DEFECT_040 copy fails with exactly {Seats, Result, Money}.
-- **2a–2d.** `Game` (`src/game.rs`): replay over the cursor, takeover on and
-  off the record, play with bots and `next_hand`, D1–D5 kernel tests on and
-  off the record (`tests/game.rs`).
-- **3a–3d.** `Frame` (`src/frame.rs`), `draw::geometry` with the
-  disjoint-boxes proptest, `draw::svg` in ring, spotlight and ledger with 24
-  golden SVGs (`tests/golden/`), and `examples/bowery-still.rs`.
-- **4a–4c.** `src/element.rs` and `src/wasm.rs` (`BoweryTable`), the size
-  profile and gate (1,295,901 bytes; gate 1,425,491), `js/bowery.js`,
-  `js/bowery.css`, `demo/index.html` (`make site`, `make serve`).
-- **5a–5d.** Playwright in `tests/e2e/` (`make e2e`): D1–D8, three tables
-  on one page, one origin, script off and `file://`.
-- `bin/security-scan` committed (a global excludes file hid it; the Security
-  workflow failed on every push).
+- **EPIC-110 / bower EPIC-20, Phases 0–6.** Shipped: v0.1.0 (22 October
+  2026) on crates.io, npm (with provenance) and GitHub. See
+  [docs/EPIC-110_Bowery.md](docs/EPIC-110_Bowery.md).
+- **v0.1.1** (22 October 2026): trusted publishing (OIDC) only; no stored tokens.
+- **Release check** (`2f9e919`): `scripts/dist.sh` refuses a README whose CDN
+  link is not the crate version. In `CHANGELOG.md` under Unreleased.
 
-## EPIC-20 — open work
+## Next — consumers of the release
 
-### Phase 6 — Release
+- [ ] **bower EPIC-21 — the ```` ```bowery ```` block.** All phases Planned;
+  its only blocker was bowery `v0.1.0`, now shipped. The work is in bower,
+  not here, but it is the first real consumer and will find bowery's API
+  gaps. ([bower `docs/EPIC-21_Bowery_Block.md`](https://github.com/ImperialBower/bower/blob/main/docs/EPIC-21_Bowery_Block.md))
 
-- [x] **6a.** `release.yml`, `scripts/dist.sh`, versions at 0.1.0 (prepared; nothing published).
-- [x] **6b.** `v0.1.0`: crates.io, npm, GitHub release (22 October 2026).
-- [x] **6c.** pkarena0-web: EPIC-56 superseded, embed release removed.
+## Features — named follow-ons (bower EPIC-20 § "What this EPIC does not do")
+
+None is committed. EPIC-111–119 are free for them (pkcore `ROADMAP.md`).
+
+- [ ] **pkarena0-web's own table on bowery.** "A possible follow-on, not a goal."
+- [ ] **Omaha and stud tables.** Hold'em only today; "come later".
+- [ ] **A hand log.** Out of v0.1 scope, with sound, animation, chip graphics,
+  avatars and extra themes.
+
+## Release housekeeping
+
+- [ ] **Ship the Unreleased changelog entry.** Tooling only (the README check);
+  it can ride along with the next real change rather than a release of its own.
 
 ## Tech debt
 
-One item: `SmallRng`'s platform dependence. (The pkcore replay-log gap was
-fixed upstream as pkcore DEFECT_041, 0.17.3.) See [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md).
+One tracked item: `SmallRng` deals differently on wasm32 and 64-bit targets
+for the same seed (`src/game.rs:359`, `src/game.rs:429`). The automated
+review pass is still pending. See [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md).
+
+## Code comments
+
+No `TODO`, `FIXME`, `XXX`, `HACK` or `BUG` markers in the tree.
 
 ## Issues
 

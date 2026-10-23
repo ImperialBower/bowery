@@ -14,6 +14,6 @@
 ## 🤖 Automated review findings
 <!-- Machine-proposed. Promote good ones up to "Tracked debt", delete the rest. -->
 
-None. The 2026-10-21 creation skipped the deep review: there is no kernel code
-to review yet. Run `/backlog` again after EPIC-20 Phase 1 and ask for the
-review pass.
+None yet. The 2026-10-21 creation skipped the deep review: there was no kernel
+code to review. EPIC-20 shipped on 2026-10-22, so the pass is now due. Run
+`/backlog` and ask for the review pass.
