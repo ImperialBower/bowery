@@ -14,3 +14,4 @@
 * **Update**: `.tool-versions` was hidden by the same global excludes file as `bin/`; `.gitignore` re-includes it (CI `Browser proof` failed on `setup-node`).
 * **Update**: EPIC-20 Phase 6a prepared — `scripts/dist.sh`, `release.yml`, `npm/package.json`, `CHANGELOG.md`, versions at 0.1.0; nothing published. See [release](processes/release.md).
 * **Update**: v0.1.0 released (crates.io, npm with provenance, GitHub). npm trusted publishing needed "Allow npm publish" ticked; see [release](processes/release.md).
+* **Update**: v0.1.1 released, the first with no stored tokens. `scripts/dist.sh` now also checks that the README's CDN link names the crate version; the link stays exact. See [release](processes/release.md).

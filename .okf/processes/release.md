@@ -3,7 +3,7 @@ type: process
 title: Release
 description: How a bowery version goes out to crates.io, npm and a GitHub release tarball from one tag, and what to check first.
 tags: [release, crates.io, npm, ci]
-timestamp: '2026-10-22T00:00:00Z'
+timestamp: '2026-10-23T00:00:00Z'
 ---
 
 # Release
@@ -18,9 +18,13 @@ or move a tag.
 
 ## Before tagging
 
-1. Set the same version in `Cargo.toml` and `npm/package.json`, and add a
+1. Set the same version in `Cargo.toml`, `npm/package.json` and the
+   README's CDN link (`@imperialbower/bowery@X.Y.Z`), and add a
    `## [X.Y.Z] - date` section to `CHANGELOG.md`; its body becomes the
-   release notes.
+   release notes. `scripts/dist.sh` refuses any mismatch. The README link
+   stays exact, never `@latest` or `@0.1`: `bowery.js` loads the glue and
+   the wasm from beside it, and jsDelivr resolves a range per file and caches
+   it for up to 7 days, so a range can serve them from two releases.
 2. Run `make ayce`, and `make dist`, which runs the release checks locally.
    `cargo publish --dry-run` and `npm pack --dry-run ./dist/bowery` show what
    would ship.

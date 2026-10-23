@@ -7,7 +7,8 @@
 #   3. GitHub     bowery-vX.Y.Z.tar.gz, the same files as one flat directory
 #
 # scripts/dist.sh is the gate: it refuses a tag that is not both Cargo.toml's
-# and npm/package.json's version, and a wasm over the Makefile's WASM_GATE.
+# and npm/package.json's version, a README CDN link to another version, and a
+# wasm over the Makefile's WASM_GATE.
 # Tag a commit whose CI is green. Publishing cannot be undone. If a step
 # fails before it published anything, fix the cause outside the repo and
 # re-run the failed jobs (`gh run rerun <id> --failed`): the steps that

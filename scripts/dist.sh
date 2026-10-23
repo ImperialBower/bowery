@@ -27,6 +27,14 @@ crate=$(sed -n 's/^version = "\(.*\)"$/\1/p' "$root/Cargo.toml" | head -1)
 npm=$(sed -n 's/^  "version": "\(.*\)",$/\1/p' "$root/npm/package.json" | head -1)
 [ -n "$crate" ] || die "no version in Cargo.toml"
 [ "$crate" = "$npm" ] || die "Cargo.toml is $crate but npm/package.json is $npm"
+# The README pins an exact version in its CDN links: the element loads the
+# glue and the wasm beside it, and a range such as @0.1 could serve them
+# from two different releases while the CDN's cache catches up.
+pins=$(grep -oE '@imperialbower/bowery@[^/"[:space:]]+' "$root/README.md" | sed 's/.*@//' | sort -u || true)
+[ -n "$pins" ] || die "README.md has no @imperialbower/bowery@<version> link"
+for pin in $pins; do
+  [ "$pin" = "$crate" ] || die "README.md links @imperialbower/bowery@$pin but the crate is $crate"
+done
 if [ -n "$tag" ] && [ "$tag" != "v$crate" ]; then
   die "tag $tag is not the crate version $crate; bump both or tag v$crate"
 fi
