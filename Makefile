@@ -48,10 +48,11 @@ size: pkg ## fail if the wasm is over the size gate
 		echo "bowery_wasm_bg.wasm: $$bytes bytes (gate $(WASM_GATE))"; \
 		test $$bytes -le $(WASM_GATE)
 
-site: pkg ## assemble the demo in site/: the element in site/bowery/, configs and stills beside it
+site: pkg ## assemble the demo in site/: the element in site/bowery/, configs and stills beside it, a guide per table in site/guide/
 	rm -rf site && mkdir -p site/bowery
 	cp js/bowery.js js/bowery.css pkg/bowery_wasm.js pkg/bowery_wasm_bg.wasm LICENSE-MIT LICENSE-APACHE site/bowery/
 	cp demo/index.html demo/the-hand-play.yaml site/
+	mkdir -p site/guide && cp demo/guide/* site/guide/
 	{ printf 'mode: replay\nlayout: ring\nhand:\n'; sed 's/^/  /' fixtures/the_hand.yaml; } > site/the-hand-replay.yaml
 	{ printf 'mode: interactive\nlayout: spotlight\nseat: 4\nstart: flop\nhand:\n'; sed 's/^/  /' fixtures/the_hand.yaml; } > site/the-hand-interactive.yaml
 	cargo run -q --example bowery-still -- site/the-hand-replay.yaml --at flop > site/the-hand-flop.svg
@@ -59,6 +60,10 @@ site: pkg ## assemble the demo in site/: the element in site/bowery/, configs an
 	cargo run -q --example bowery-still -- demo/the-hand-play.yaml --view all > site/the-hand-play.svg
 
 serve: site ## serve the demo at http://localhost:8000
+	@echo ""
+	@echo "  demo:   http://localhost:8000/"
+	@for page in site/guide/*.html; do echo "  guide:  http://localhost:8000/guide/$${page##*/}"; done
+	@echo ""
 	python3 -m http.server -d site 8000
 
 e2e: site e2e-pages ## the browser proof (Playwright, tests/e2e): D1-D8, three tables, one origin, the fallback

@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A theme switch on the demo page**: system, paper or night. It sets
   mdBook's theme class on `<html>` (`light`, `coal`), which every
   `<bowery-table>` already reads and watches, so the tables redraw at once.
+- **A guide page for each demo table**, at `guide/replay.html`,
+  `guide/interactive.html`, `guide/play.html` and `guide/nine.html` on the
+  demo site (`demo/guide/`), linked from each table. Each shows the table
+  live and the setup step by step: the script line, the config, the element,
+  serving it, the settings and the events. A browser test keeps the configs
+  shown equal to the configs the tables run, and `scripts/dist.sh` checks
+  their CDN links name the crate version, as it does the README's.
 
 ### Changed
 

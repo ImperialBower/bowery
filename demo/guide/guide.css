@@ -1,0 +1,71 @@
+/* The guide pages: one per table on the demo page, each showing how to set
+   that table up. Same face as demo/index.html; the theme classes are
+   mdBook's (light, coal), which <bowery-table> reads too. */
+:root {
+  --ink: #1b1b1b;
+  --paper: #ffffff;
+  --rule: #888888;
+  --muted: #555555;
+  --code: #f4f1ea;
+  --link: #0b5cad;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --ink: #f2f2f2;
+    --paper: #111111;
+    --rule: #666666;
+    --muted: #aaaaaa;
+    --code: #1d2126;
+    --link: #7fb8f0;
+  }
+}
+:root.coal {
+  --ink: #f2f2f2;
+  --paper: #111111;
+  --rule: #666666;
+  --muted: #aaaaaa;
+  --code: #1d2126;
+  --link: #7fb8f0;
+}
+
+body {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  max-width: 680px;
+  margin: 24px auto;
+  padding: 0 16px;
+  line-height: 1.45;
+  background: var(--paper);
+  color: var(--ink);
+}
+a { color: var(--link); }
+nav { font-size: 13px; color: var(--muted); }
+nav a { margin-right: 0.6em; }
+nav [aria-current] { font-weight: bold; color: var(--ink); text-decoration: none; }
+h2 { margin-top: 2em; border-bottom: 1px solid var(--rule); }
+#theme { border: 1px solid var(--rule); padding: 4px 10px 6px; }
+#theme label { margin-right: 1em; cursor: pointer; }
+bowery-table { margin: 12px 0 20px; }
+bowery-table img { display: block; max-width: 100%; }
+
+.code { position: relative; }
+.code pre {
+  background: var(--code);
+  border: 1px solid var(--rule);
+  padding: 8px 64px 8px 10px; /* the right side is the copy button's */
+  overflow-x: auto;
+  font-size: 12.5px;
+}
+.code button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.note { color: var(--muted); font-size: 13px; }
+
+table.fields { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.fields th, table.fields td { border-bottom: 1px solid var(--rule); padding: 4px 6px; text-align: left; vertical-align: top; }
+
+#log { font-size: 12px; max-height: 10em; overflow: auto; border: 1px solid var(--rule); padding: 6px; }

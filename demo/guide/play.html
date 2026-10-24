@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bowery guide: play</title>
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+<nav>
+  <a href="../index.html">← demo</a>
+  <a href="replay.html">replay</a>
+  <a href="interactive.html">interactive</a>
+  <a href="play.html" aria-current="page">play</a>
+  <a href="nine.html">nine seats</a>
+</nav>
+
+<h1>Play against bots</h1>
+<p>A live table. The reader has one seat; pkcore's bots play the rest.
+When a hand ends, the next one is dealt. This one is The Hand's table at the
+broadcast's stakes, with the reader in Negreanu's seat.</p>
+
+<fieldset id="theme">
+  <legend>Theme</legend>
+  <label><input type="radio" name="theme" value="" checked> system</label>
+  <label><input type="radio" name="theme" value="light"> paper</label>
+  <label><input type="radio" name="theme" value="coal"> night</label>
+</fieldset>
+
+<bowery-table id="play" base="../bowery/" src="../the-hand-play.yaml">
+  <img src="../the-hand-play.svg" alt="The Hand's table before the first hand.">
+</bowery-table>
+
+<h2>What you need</h2>
+<ul>
+  <li>No hand history. The config says who sits where.</li>
+  <li>A web server. The table does not run from a <code>file://</code> page.</li>
+</ul>
+
+<h2>Step 1: load the element</h2>
+<p>Put this line in the page once. Every table on the page shares it.</p>
+<div class="code"><pre>&lt;script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.1.2/bowery.js"&gt;&lt;/script&gt;</pre></div>
+<p class="note">To host it yourself, unpack <code>bowery-vX.Y.Z.tar.gz</code> from a
+<a href="https://github.com/ImperialBower/bowery/releases">release</a> into a
+folder, for example <code>bowery/</code>, and load
+<code>bowery/bowery.js</code> instead. The element loads its wasm from the
+same folder.</p>
+
+<h2>Step 2: write the config</h2>
+<p>Save this as <code>the-hand-play.yaml</code>. It is the whole file.</p>
+<div class="code" data-config="../the-hand-play.yaml"><pre># The Hand's table in play mode: the eight players at the broadcast's
+# $300/$600 with a $100 ante, the reader in Negreanu's seat, seven bots.
+mode: play
+seat: 4
+layout: ring
+table: { seats: 8, button: 0, stakes: { small_blind: 300.0, big_blind: 600.0, ante: 100.0 } }
+players:
+  - { seat: 0, name: Doyle Brunson, stack: 100000, bot: tight_aggressive }
+  - { seat: 1, name: Eli Elezra, stack: 100000, bot: loose_passive }
+  - { seat: 2, name: Antonio Esfandiari, stack: 100000, bot: loose_aggressive }
+  - { seat: 3, name: Gus Hansen, stack: 287100, bot: maniac }
+  - { seat: 4, name: Daniel Negreanu, stack: 387100 }
+  - { seat: 5, name: Cory Zeidman, stack: 100000, bot: tight_passive }
+  - { seat: 6, name: Barry Greenstein, stack: 100000, bot: gto }
+  - { seat: 7, name: Amnon Filippi, stack: 100000, bot: abc }
+delay_ms: 500
+</pre></div>
+<ul>
+  <li><code>seat: 4</code> is the reader. Their player has no
+    <code>bot</code>. Seats count from 0.</li>
+  <li><code>table</code> sets the chairs, the button and the stakes. Blinds
+    and ante are whole chips.</li>
+  <li>Each player has a seat, a stack and, but for the reader, a bot. The
+    name is optional.</li>
+  <li><code>delay_ms</code> is the time between bot moves.</li>
+</ul>
+
+<h2>Step 3: put the table in the page</h2>
+<div class="code"><pre>&lt;bowery-table src="the-hand-play.yaml"&gt;
+  &lt;img src="the-hand-play.svg" alt="The table before the first hand."&gt;
+&lt;/bowery-table&gt;</pre></div>
+<ul>
+  <li><code>src</code> is the config file. It must be on the same site as the
+    page.</li>
+  <li>What you put inside the element is the fallback. The reader sees it
+    until the table is ready, and keeps it if JavaScript is off.</li>
+  <li>If you host the element yourself in another folder, add
+    <code>base="bowery/"</code>.</li>
+</ul>
+<p>To make a still picture for the fallback, run this in a clone of
+bowery:</p>
+<div class="code"><pre>cargo run --example bowery-still -- the-hand-play.yaml --view all &gt; the-hand-play.svg</pre></div>
+
+<h2>Step 4: serve the page</h2>
+<div class="code"><pre>python3 -m http.server 8000</pre></div>
+
+<h2>The bots</h2>
+<p>A <code>bot</code> is one of pkcore's profiles:</p>
+<p><code>abc</code>, <code>gto</code>, <code>loose_aggressive</code>,
+<code>loose_passive</code>, <code>maniac</code>,
+<code>short_stack_ninja</code>, <code>tight_aggressive</code>,
+<code>tight_passive</code>.</p>
+<p>A player with no <code>bot</code> who is not the reader is played by
+<code>gto</code>.</p>
+
+<h2>Settings you can change</h2>
+<table class="fields">
+  <tr><th>Field</th><th>Values</th><th>What it does</th></tr>
+  <tr><td><code>mode</code></td><td><code>play</code></td><td>A live table. Needed.</td></tr>
+  <tr><td><code>table.seats</code></td><td>2 to 10</td><td>Chairs at the table.</td></tr>
+  <tr><td><code>table.button</code></td><td>a seat</td><td>Where the button starts.</td></tr>
+  <tr><td><code>table.stakes</code></td><td><code>small_blind</code>, <code>big_blind</code>, <code>ante</code></td><td>Whole chips. The big blind is at least the small.</td></tr>
+  <tr><td><code>players</code></td><td><code>{ seat, name, stack, bot }</code></td><td>Who sits where. At least two.</td></tr>
+  <tr><td><code>seat</code></td><td>a seat</td><td>The reader. Default: the first player with no bot.</td></tr>
+  <tr><td><code>view</code></td><td><code>seat</code>, <code>all</code></td><td>Only the reader's cards up (default), or all of them.</td></tr>
+  <tr><td><code>layout</code></td><td><code>ring</code>, <code>spotlight</code>, <code>ledger</code></td><td>How the table is drawn. Default <code>ring</code>.</td></tr>
+  <tr><td><code>deck</code></td><td>52 cards</td><td>A stacked deck for hand 1. Later hands are shuffled.</td></tr>
+  <tr><td><code>seed</code></td><td>a number</td><td>Seeds the bots and shuffles, so a page deals the same hands each time.</td></tr>
+  <tr><td><code>delay_ms</code></td><td>a number</td><td>Milliseconds between bot moves. Default 700.</td></tr>
+</table>
+<p class="note">Every field: <a href="https://docs.rs/bowery/latest/bowery/config/struct.Config.html"><code>Config</code> on docs.rs</a>.</p>
+
+<h2>Events</h2>
+<p>When a hand ends, the table sends <code>bowery:hand-over</code>:</p>
+<div class="code"><pre>document.addEventListener('bowery:hand-over', (event) =&gt; {
+  console.log(event.target.id, 'hand over', event.detail.result);
+});</pre></div>
+<p>This page's events:</p>
+<pre id="log"></pre>
+
+<script type="module" src="guide.js"></script>
+<script type="module" src="../bowery/bowery.js"></script>
+</body>
+</html>

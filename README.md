@@ -26,6 +26,11 @@ bower's [EPIC-20](https://github.com/ImperialBower/bower/blob/main/docs/EPIC-20_
 replay and an interactive replay, and tables against the bots. It is
 `demo/index.html`, published by `.github/workflows/pages.yaml` from `main`
 once the browser proof passes.
+Each table links to a guide that shows how to set it up, step by step:
+[replay](https://imperialbower.github.io/bowery/guide/replay.html),
+[interactive](https://imperialbower.github.io/bowery/guide/interactive.html),
+[play](https://imperialbower.github.io/bowery/guide/play.html) and
+[nine seats](https://imperialbower.github.io/bowery/guide/nine.html).
 
 ## In a web page
 
