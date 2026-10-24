@@ -12,3 +12,4 @@
 # CLAUDE.md's version pins and CI's Node version live here; keep it tracked
 # even when a global excludes file ignores it.
 !/.tool-versions
+.superpowers
