@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The demo on GitHub Pages**, at <https://imperialbower.github.io/bowery/>,
+  linked from the README. `.github/workflows/pages.yaml` publishes `site/`
+  from `main` after the browser proof passes, without the proof's own pages.
+
 ## [0.1.2] - 2026-10-23
 
 ### Fixed
