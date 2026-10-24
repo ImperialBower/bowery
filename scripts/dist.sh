@@ -35,6 +35,12 @@ pins=$(grep -oE '@imperialbower/bowery@[^/"[:space:]]+' "$root/README.md" | sed 
 for pin in $pins; do
   [ "$pin" = "$crate" ] || die "README.md links @imperialbower/bowery@$pin but the crate is $crate"
 done
+# The demo's guide pages show the same link for readers to copy.
+for page in "$root"/demo/guide/*.html; do
+  for pin in $(grep -oE '@imperialbower/bowery@[^/"[:space:]]+' "$page" | sed 's/.*@//' | sort -u || true); do
+    [ "$pin" = "$crate" ] || die "${page#"$root"/} links @imperialbower/bowery@$pin but the crate is $crate"
+  done
+done
 if [ -n "$tag" ] && [ "$tag" != "v$crate" ]; then
   die "tag $tag is not the crate version $crate; bump both or tag v$crate"
 fi

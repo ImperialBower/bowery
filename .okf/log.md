@@ -25,3 +25,4 @@
 ## 2026-10-24
 * **Update**: `js/bowery.css` carries a colour theme (paper light, slate "night" dark) that recolours the renderer's SVG by class; the SVG and golden files are untouched. See [frame and draw](concepts/frame-and-draw.md).
 * **Update**: the demo page has a theme switch (system / paper / night). It only sets `light` or `coal` on `<html>`: `prefersDark()` in `js/bowery.js` reads that class and a `MutationObserver` redraws started tables; tables not yet started (lazy, `IntersectionObserver`) pick the class up when they start. See [frame and draw](concepts/frame-and-draw.md).
+* **Update**: a guide page per demo table (`demo/guide/`, served at `guide/*.html`), linked from the demo and the README; `guide.spec.ts` keeps each shown config equal to the one its table runs, and `dist.sh` checks the guides' CDN pins. See [the element](concepts/element.md).

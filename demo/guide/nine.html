@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bowery guide: nine seats</title>
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+<nav>
+  <a href="../index.html">← demo</a>
+  <a href="replay.html">replay</a>
+  <a href="interactive.html">interactive</a>
+  <a href="play.html">play</a>
+  <a href="nine.html" aria-current="page">nine seats</a>
+</nav>
+
+<h1>Watch nine bots play</h1>
+<p>A live table with no reader seat: nine bots play, every card is up, and
+the reader watches. The config sits in the page itself, so there is no
+second file.</p>
+
+<fieldset id="theme">
+  <legend>Theme</legend>
+  <label><input type="radio" name="theme" value="" checked> system</label>
+  <label><input type="radio" name="theme" value="light"> paper</label>
+  <label><input type="radio" name="theme" value="coal"> night</label>
+</fieldset>
+
+<bowery-table id="nine" base="../bowery/">
+  <script type="application/yaml">
+mode: play
+layout: ledger
+view: all
+table: { seats: 9, stakes: { small_blind: 50.0, big_blind: 100.0 } }
+players:
+  - { seat: 0, stack: 10000, bot: gto }
+  - { seat: 1, stack: 10000, bot: tight_passive }
+  - { seat: 2, stack: 10000, bot: loose_aggressive }
+  - { seat: 3, stack: 10000, bot: tight_aggressive }
+  - { seat: 4, stack: 10000, bot: loose_passive }
+  - { seat: 5, stack: 10000, bot: maniac }
+  - { seat: 6, stack: 10000, bot: abc }
+  - { seat: 7, stack: 10000, bot: short_stack_ninja }
+  - { seat: 8, stack: 10000, bot: gto }
+seed: 9
+delay_ms: 400
+  </script>
+  <p>Nine bots at a 50/100 table.</p>
+</bowery-table>
+
+<h2>What you need</h2>
+<ul>
+  <li>Nothing but the page. The config goes inside the element.</li>
+  <li>A web server. The table does not run from a <code>file://</code> page.</li>
+</ul>
+
+<h2>Step 1: load the element</h2>
+<p>Put this line in the page once. Every table on the page shares it.</p>
+<div class="code"><pre>&lt;script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.1.2/bowery.js"&gt;&lt;/script&gt;</pre></div>
+<p class="note">To host it yourself, unpack <code>bowery-vX.Y.Z.tar.gz</code> from a
+<a href="https://github.com/ImperialBower/bowery/releases">release</a> into a
+folder, for example <code>bowery/</code>, and load
+<code>bowery/bowery.js</code> instead. The element loads its wasm from the
+same folder.</p>
+
+<h2>Step 2: put the table and its config in the page</h2>
+<p>This is the whole table. The YAML goes in a
+<code>&lt;script type="application/yaml"&gt;</code> inside the element.</p>
+<div class="code" data-inline="nine"><pre>&lt;bowery-table&gt;
+  &lt;script type="application/yaml"&gt;
+mode: play
+layout: ledger
+view: all
+table: { seats: 9, stakes: { small_blind: 50.0, big_blind: 100.0 } }
+players:
+  - { seat: 0, stack: 10000, bot: gto }
+  - { seat: 1, stack: 10000, bot: tight_passive }
+  - { seat: 2, stack: 10000, bot: loose_aggressive }
+  - { seat: 3, stack: 10000, bot: tight_aggressive }
+  - { seat: 4, stack: 10000, bot: loose_passive }
+  - { seat: 5, stack: 10000, bot: maniac }
+  - { seat: 6, stack: 10000, bot: abc }
+  - { seat: 7, stack: 10000, bot: short_stack_ninja }
+  - { seat: 8, stack: 10000, bot: gto }
+seed: 9
+delay_ms: 400
+  &lt;/script&gt;
+  &lt;p&gt;Nine bots at a 50/100 table.&lt;/p&gt;
+&lt;/bowery-table&gt;</pre></div>
+<ul>
+  <li>Every player has a <code>bot</code>, so no seat is the reader's.</li>
+  <li><code>view: all</code> puts every hole card face up.</li>
+  <li><code>layout: ledger</code> draws one row per seat. It suits many
+    seats and narrow screens.</li>
+  <li><code>seed: 9</code> deals the same hands each time the page
+    loads.</li>
+  <li>The <code>&lt;p&gt;</code> is the fallback. The reader sees it until
+    the table is ready, and keeps it if JavaScript is off.</li>
+</ul>
+<p class="note">Many tables can sit on one page. Each has its own config and
+its own game; they share one wasm module.</p>
+
+<h2>Step 3: serve the page</h2>
+<div class="code"><pre>python3 -m http.server 8000</pre></div>
+
+<h2>Settings you can change</h2>
+<table class="fields">
+  <tr><th>Field</th><th>Values</th><th>What it does</th></tr>
+  <tr><td><code>mode</code></td><td><code>play</code></td><td>A live table. Needed.</td></tr>
+  <tr><td><code>table.seats</code></td><td>2 to 10</td><td>Chairs at the table.</td></tr>
+  <tr><td><code>table.stakes</code></td><td><code>small_blind</code>, <code>big_blind</code>, <code>ante</code></td><td>Whole chips.</td></tr>
+  <tr><td><code>players</code></td><td><code>{ seat, name, stack, bot }</code></td><td>Who sits where. Give each a bot to watch only.</td></tr>
+  <tr><td><code>view</code></td><td><code>all</code>, <code>seat</code></td><td>Every card up, or one seat's.</td></tr>
+  <tr><td><code>layout</code></td><td><code>ring</code>, <code>spotlight</code>, <code>ledger</code></td><td>How the table is drawn.</td></tr>
+  <tr><td><code>seed</code></td><td>a number</td><td>The same hands on every load.</td></tr>
+  <tr><td><code>delay_ms</code></td><td>a number</td><td>Milliseconds between bot moves. Default 700.</td></tr>
+</table>
+<p class="note">Every field: <a href="https://docs.rs/bowery/latest/bowery/config/struct.Config.html"><code>Config</code> on docs.rs</a>.
+The bots are listed on the <a href="play.html">play</a> guide.</p>
+
+<h2>Events</h2>
+<p>Each finished hand sends <code>bowery:hand-over</code>:</p>
+<div class="code"><pre>document.addEventListener('bowery:hand-over', (event) =&gt; {
+  console.log(event.target.id, 'hand over', event.detail.result);
+});</pre></div>
+<p>This page's events:</p>
+<pre id="log"></pre>
+
+<script type="module" src="guide.js"></script>
+<script type="module" src="../bowery/bowery.js"></script>
+</body>
+</html>

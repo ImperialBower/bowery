@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bowery guide: interactive</title>
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+<nav>
+  <a href="../index.html">← demo</a>
+  <a href="replay.html">replay</a>
+  <a href="interactive.html" aria-current="page">interactive</a>
+  <a href="play.html">play</a>
+  <a href="nine.html">nine seats</a>
+</nav>
+
+<h1>Take a seat in a recorded hand</h1>
+<p>A replay where the reader can take over a seat. If they act as the
+record did, the record goes on. If they act otherwise, the hand is theirs:
+the other seats become bots, and the real board is still to come. Here the
+reader takes Negreanu's seat at the flop of The Hand.</p>
+
+<fieldset id="theme">
+  <legend>Theme</legend>
+  <label><input type="radio" name="theme" value="" checked> system</label>
+  <label><input type="radio" name="theme" value="light"> paper</label>
+  <label><input type="radio" name="theme" value="coal"> night</label>
+</fieldset>
+
+<bowery-table id="interactive" base="../bowery/" src="../the-hand-interactive.yaml">
+  <img src="../the-hand-spotlight.svg" alt="The Hand on the flop, in the spotlight layout.">
+</bowery-table>
+
+<h2>What you need</h2>
+<ul>
+  <li>A recorded hand in pkcore's hand-history format, version 1. This page
+    uses <a href="https://github.com/ImperialBower/bowery/blob/main/fixtures/the_hand.yaml">fixtures/the_hand.yaml</a>.</li>
+  <li>A web server. The table does not run from a <code>file://</code> page.</li>
+</ul>
+
+<h2>Step 1: load the element</h2>
+<p>Put this line in the page once. Every table on the page shares it.</p>
+<div class="code"><pre>&lt;script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.1.2/bowery.js"&gt;&lt;/script&gt;</pre></div>
+<p class="note">To host it yourself, unpack <code>bowery-vX.Y.Z.tar.gz</code> from a
+<a href="https://github.com/ImperialBower/bowery/releases">release</a> into a
+folder, for example <code>bowery/</code>, and load
+<code>bowery/bowery.js</code> instead. The element loads its wasm from the
+same folder.</p>
+
+<h2>Step 2: write the config</h2>
+<p>Write a YAML file. It has five settings, then the whole hand history,
+indented two spaces under <code>hand:</code>.</p>
+<div class="code" data-abridged data-config="../the-hand-interactive.yaml"><pre>mode: interactive
+layout: spotlight
+seat: 4
+start: flop
+hand:
+  # pkcore Hand History Format v1
+  # "The Hand" — Gus Hansen vs Daniel Negreanu
+  # …
+  pkcore_version: 0.17.0
+  format_version: 1
+  hand:
+    id: hsp-s2e11-the-hand
+    game: holdem
+  # …
+  players:
+  # …
+  - seat: 4
+    name: Daniel Negreanu
+    stack: 387100.0
+    hole_cards: 6♠ 6♥
+  # … the rest of the players, every action, then the results</pre></div>
+<ul>
+  <li><code>seat: 4</code> is the seat the table suggests. The reader can
+    pick any seat still in the hand. Seats count from 0.</li>
+  <li><code>start: flop</code> opens the table when the flop is dealt.</li>
+  <li><code>layout: spotlight</code> folds the out seats into one strip, so
+    a two-player hand gets the room.</li>
+</ul>
+<p>This is a short view. The whole file is
+<a href="../the-hand-interactive.yaml">the-hand-interactive.yaml</a>. To make
+one from your own hand history, run this:</p>
+<div class="code"><pre>{ printf 'mode: interactive\nlayout: spotlight\nseat: 4\nstart: flop\nhand:\n'; sed 's/^/  /' the_hand.yaml; } &gt; the-hand-interactive.yaml</pre></div>
+
+<h3>Optional: pick the bots</h3>
+<p>Off the record, each other seat is played by pkcore's <code>gto</code>
+bot. To pick another bot for a seat, add <code>players</code> at the top
+level of the config. A name or stack you give must agree with the hand.</p>
+<div class="code"><pre>players:
+  - { seat: 3, bot: maniac }</pre></div>
+
+<h2>Step 3: put the table in the page</h2>
+<div class="code"><pre>&lt;bowery-table src="the-hand-interactive.yaml"&gt;
+  &lt;img src="the-hand-spotlight.svg" alt="The Hand on the flop."&gt;
+&lt;/bowery-table&gt;</pre></div>
+<ul>
+  <li><code>src</code> is the config file. It must be on the same site as the
+    page.</li>
+  <li>What you put inside the element is the fallback. The reader sees it
+    until the table is ready, and keeps it if JavaScript is off.</li>
+  <li>If you host the element yourself in another folder, add
+    <code>base="bowery/"</code>.</li>
+</ul>
+<p>To make a still picture for the fallback, run this in a clone of
+bowery:</p>
+<div class="code"><pre>cargo run --example bowery-still -- the-hand-interactive.yaml --at flop &gt; the-hand-spotlight.svg</pre></div>
+
+<h2>Step 4: serve the page</h2>
+<div class="code"><pre>python3 -m http.server 8000</pre></div>
+
+<h2>How the reader uses it</h2>
+<ol>
+  <li>Pick a seat and press <b>Take this seat</b>.</li>
+  <li>Step with ⏮ ◀ ▶ ⏭, or ← → Home End. On the record, ▶ stops when it
+    is the reader's turn.</li>
+  <li>Act with the action buttons. Act as the record did, and the record
+    goes on. Act otherwise, and the hand goes off the record.</li>
+  <li><b>Back to the record</b> returns to the moment of the takeover.</li>
+</ol>
+
+<h2>Settings you can change</h2>
+<table class="fields">
+  <tr><th>Field</th><th>Values</th><th>What it does</th></tr>
+  <tr><td><code>mode</code></td><td><code>interactive</code></td><td>A replay the reader can take over. Needed.</td></tr>
+  <tr><td><code>hand</code></td><td>a hand history</td><td>The recorded hand. Needed.</td></tr>
+  <tr><td><code>seat</code></td><td>0 to 9</td><td>The suggested seat.</td></tr>
+  <tr><td><code>start</code></td><td><code>preflop</code>, <code>flop</code>, <code>turn</code>, <code>river</code>, <code>showdown</code>, or a number</td><td>Where the table opens.</td></tr>
+  <tr><td><code>layout</code></td><td><code>ring</code>, <code>spotlight</code>, <code>ledger</code></td><td>How the table is drawn. Default <code>ring</code>.</td></tr>
+  <tr><td><code>view</code></td><td><code>all</code>, <code>seat</code></td><td>All hole cards up (default), or only those of <code>seat</code>.</td></tr>
+  <tr><td><code>players</code></td><td>a list of <code>{ seat, bot }</code></td><td>The bot for a seat off the record. Default <code>gto</code>.</td></tr>
+  <tr><td><code>seed</code></td><td>a number</td><td>Seeds the bots, so the same choices give the same hand.</td></tr>
+  <tr><td><code>delay_ms</code></td><td>a number</td><td>Milliseconds between bot moves. Default 700.</td></tr>
+</table>
+<p class="note">Every field: <a href="https://docs.rs/bowery/latest/bowery/config/struct.Config.html"><code>Config</code> on docs.rs</a>.</p>
+
+<h2>Events</h2>
+<p>Two events tell the page what the reader did:</p>
+<div class="code"><pre>document.addEventListener('bowery:off-record', (event) =&gt; {
+  console.log(event.target.id, 'left the record at moment', event.detail.since);
+});
+document.addEventListener('bowery:hand-over', (event) =&gt; {
+  console.log(event.target.id, 'hand over', event.detail.result);
+});</pre></div>
+<p>This page's events:</p>
+<pre id="log"></pre>
+
+<script type="module" src="guide.js"></script>
+<script type="module" src="../bowery/bowery.js"></script>
+</body>
+</html>
