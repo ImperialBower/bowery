@@ -1,6 +1,7 @@
 [![Crates.io](https://img.shields.io/crates/v/bowery.svg)](https://crates.io/crates/bowery)
 [![npm](https://img.shields.io/npm/v/@imperialbower/bowery.svg)](https://www.npmjs.com/package/@imperialbower/bowery)
 [![Build and Test](https://github.com/ImperialBower/bowery/actions/workflows/ci.yaml/badge.svg)](https://github.com/ImperialBower/bowery/actions/workflows/ci.yaml)
+[![Demo](https://github.com/ImperialBower/bowery/actions/workflows/pages.yaml/badge.svg)](https://imperialbower.github.io/bowery/)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE-MIT)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE-APACHE)
@@ -20,6 +21,11 @@ from a YAML config in the page, and many tables can sit on one page. One Rust
 crate builds two ways: an rlib kernel (config, check, game, frame, SVG
 drawing) and, behind a `wasm` feature, the browser element. The design is
 bower's [EPIC-20](https://github.com/ImperialBower/bower/blob/main/docs/EPIC-20_Bowery.md).
+
+**Live demo: <https://imperialbower.github.io/bowery/>** — The Hand as a
+replay and an interactive replay, and tables against the bots. It is
+`demo/index.html`, published by `.github/workflows/pages.yaml` from `main`
+once the browser proof passes.
 
 ## In a web page
 

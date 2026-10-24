@@ -53,4 +53,15 @@ or move a tag.
   element, the glue, the wasm, the licences, the README, `package.json`,
   `MANIFEST.sha256`.
 
+## The demo on Pages
+
+`.github/workflows/pages.yaml` publishes `site/` (`make site`: the demo, the
+element from this commit, configs and stills) to
+<https://imperialbower.github.io/bowery/> on every push to `main`, not per
+tag, after `make e2e` passes; `site/e2e/` is removed first. The demo loads
+the element from `bowery/` beside it, never from the CDN, so it shows `main`,
+which can be ahead of the latest release. It needs Settings → Pages → Source:
+"GitHub Actions". Every path in `demo/index.html` is relative, because Pages
+serves it under `/bowery/`.
+
 See the [quality gate](quality-gate.md).
