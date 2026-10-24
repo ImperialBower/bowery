@@ -60,6 +60,10 @@ site: pkg ## assemble the demo in site/: the element in site/bowery/, configs an
 	cargo run -q --example bowery-still -- demo/the-hand-play.yaml --view all > site/the-hand-play.svg
 
 serve: site ## serve the demo at http://localhost:8000
+	@echo ""
+	@echo "  demo:   http://localhost:8000/"
+	@for page in site/guide/*.html; do echo "  guide:  http://localhost:8000/guide/$${page##*/}"; done
+	@echo ""
 	python3 -m http.server -d site 8000
 
 e2e: site e2e-pages ## the browser proof (Playwright, tests/e2e): D1-D8, three tables, one origin, the fallback
