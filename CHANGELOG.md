@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The demo on GitHub Pages**, at <https://imperialbower.github.io/bowery/>,
   linked from the README. `.github/workflows/pages.yaml` publishes `site/`
   from `main` after the browser proof passes, without the proof's own pages.
+- **A theme switch on the demo page**: system, paper or night. It sets
+  mdBook's theme class on `<html>` (`light`, `coal`), which every
+  `<bowery-table>` already reads and watches, so the tables redraw at once.
 
 ### Changed
 
