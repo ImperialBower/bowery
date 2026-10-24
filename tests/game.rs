@@ -6,6 +6,7 @@ use std::fs;
 use bowery::check::check;
 use bowery::config::Config;
 use bowery::game::{Advance, Event, Game, GameError, RecordState};
+use pkcore::cards::Cards;
 use pkcore::casino::action::PlayerAction;
 use pkcore::casino::table::Table;
 use pkcore::hand_history::{HandHistory, ReplayStreet};
@@ -314,6 +315,56 @@ fn game__next_hand_moves_the_button_and_carries_stacks() {
         player.chips + player.bet
     };
     assert_eq!(vec![950, 1050], vec![committed(0), committed(1)]);
+}
+
+/// Heads-up for 2 chips each at 1/2: the big blind is all in from the post,
+/// the reader calls, and the aces take every chip, so the table is broken.
+fn broken_table() -> Game {
+    let front = [
+        "A♠", "7♦", "A♥", "2♣", "K♥", "Q♦", "9♣", "5♠", "3♥", "8♦", "4♣", "J♥",
+    ];
+    let rest: Vec<String> = Cards::deck()
+        .to_string()
+        .split_whitespace()
+        .filter(|card| !front.contains(card))
+        .map(str::to_string)
+        .collect();
+    let deck = format!("{} {}", front.join(" "), rest.join(" "));
+    let mut game = play(&format!(
+        "mode: play\nseat: 0\n\
+         table: {{ seats: 2, button: 0, stakes: {{ small_blind: 1.0, big_blind: 2.0 }} }}\n\
+         players:\n  - {{ seat: 0, stack: 2 }}\n  - {{ seat: 1, stack: 2, bot: abc }}\n\
+         deck: {deck}\n"
+    ));
+    finish(&mut game, check_or_call);
+    let stacks: Vec<usize> = (0..2)
+        .map(|seat| game.table().seats.get_seat(seat).unwrap().player.chips)
+        .collect();
+    assert!(stacks.contains(&0), "nobody busted: {stacks:?}");
+    game
+}
+
+#[test]
+fn game__next_hand_on_a_broken_table_changes_nothing() {
+    let mut game = broken_table();
+    let before = (
+        game.table().clone(),
+        game.moments(),
+        game.at(),
+        game.hand_number(),
+    );
+
+    assert_eq!(Err(GameError::TableBroken), game.next_hand());
+    assert_eq!(
+        before,
+        (
+            game.table().clone(),
+            game.moments(),
+            game.at(),
+            game.hand_number()
+        )
+    );
+    assert_eq!(Err(GameError::TableBroken), game.next_hand());
 }
 
 #[test]

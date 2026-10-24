@@ -308,7 +308,10 @@ class BoweryTableElement extends HTMLElement {
 
   _key(event) {
     const state = this._last;
-    if (!state?.controls.seek || event.target !== this) return;
+    // Keys from the shadow DOM are retargeted to this element, so
+    // `event.target` is always `this`; the path's first entry is the control
+    // that had focus. Its keys are its own.
+    if (!state?.controls.seek || event.composedPath()[0] !== this) return;
     const moves = {
       ArrowLeft: state.moment - 2,
       ArrowRight: state.moment,

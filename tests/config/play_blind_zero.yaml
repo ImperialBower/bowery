@@ -1,0 +1,6 @@
+# Play's blinds are more than nothing.
+mode: play
+table: { stakes: { small_blind: 0.0, big_blind: 2.0 } }
+players:
+  - { seat: 0, stack: 200 }
+  - { seat: 1, stack: 200, bot: gto }

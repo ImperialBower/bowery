@@ -7,8 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-23
+
+### Fixed
+
+- **Arrow keys in the controls.** Arrow, Home and End in the seat picker or
+  a bet box no longer seek moments; they seek only when the table itself has
+  focus.
+- **`check` refuses play tables the game cannot run:** a button off the
+  table, a blind of 0, a big blind smaller than the small blind, and a stack
+  of 0.
+- **`check` refuses `table` beside a recorded hand.** It was documented as an
+  override but did nothing; replay and interactive play the hand's own table.
+
 ### Changed
 
+- **Every action in the release workflow is pinned to a commit.** GitHub's
+  own `actions/*` were on tags, which can be moved, in the jobs that hold
+  the publish tokens.
 - **The release checks the README.** `scripts/dist.sh` refuses a README whose
   `@imperialbower/bowery@<version>` CDN link is not the crate's version. The
   link stays exact: the element loads its glue and wasm from beside it, and a

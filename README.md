@@ -24,7 +24,7 @@ bower's [EPIC-20](https://github.com/ImperialBower/bower/blob/main/docs/EPIC-20_
 ## In a web page
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.1.1/bowery.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.1.2/bowery.js"></script>
 
 <bowery-table>
   <script type="application/yaml">
