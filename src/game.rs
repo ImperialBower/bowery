@@ -356,6 +356,8 @@ impl Live {
 /// ```
 pub struct Game {
     checked: Checked,
+    /// The seed the config gave, or the hash of it.
+    seed: u64,
     rng: SmallRng,
     bots: HashMap<u8, BotProfile>,
     reader: Option<u8>,
@@ -426,6 +428,7 @@ impl Game {
             .collect();
         let mut game = Self {
             checked,
+            seed,
             rng: SmallRng::seed_from_u64(seed),
             bots,
             reader: None,
@@ -602,6 +605,55 @@ impl Game {
     #[must_use]
     pub fn frame(&self, view: View) -> Frame {
         Frame::new(self, view)
+    }
+
+    /// The seed this game runs on: the config's `seed`, or else a hash of
+    /// the config. The odds draw their Monte Carlo samples from it, so the
+    /// same config always shows the same percents.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::check::check;
+    /// use bowery::config::Config;
+    /// use bowery::game::Game;
+    ///
+    /// let config = Config::from_yaml("
+    /// mode: play
+    /// seed: 7
+    /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
+    /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
+    /// ").unwrap();
+    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// assert_eq!(7, game.seed());
+    /// ```
+    #[must_use]
+    pub fn seed(&self) -> u64 {
+        self.seed
+    }
+
+    /// The frame for the moment on screen with the win percents on it: see
+    /// [`Frame::with_odds`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::check::check;
+    /// use bowery::config::{Config, View};
+    /// use bowery::game::Game;
+    ///
+    /// let config = Config::from_yaml("
+    /// mode: play
+    /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
+    /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
+    /// ").unwrap();
+    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// assert!(game.frame_with_odds(View::All).odds.is_some());
+    /// assert!(game.frame(View::All).odds.is_none());
+    /// ```
+    #[must_use]
+    pub fn frame_with_odds(&self, view: View) -> Frame {
+        Frame::with_odds(self, view)
     }
 
     /// The pkcore table after the moment on screen.

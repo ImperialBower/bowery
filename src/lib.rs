@@ -18,6 +18,7 @@
 //!   hidden card is never in it.
 //! - [`draw`]: the one renderer, a frame as SVG in three layouts, with every
 //!   box placed by [`draw::geometry`] before anything is drawn.
+//! - [`odds`]: each live seat's win percent, asked of pkcore's equity engine.
 //!
 //! Behind the `wasm` feature (off by default, so the rlib has no
 //! wasm-bindgen in its tree):
@@ -58,6 +59,7 @@ pub mod draw;
 pub mod element;
 pub mod frame;
 pub mod game;
+pub mod odds;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 

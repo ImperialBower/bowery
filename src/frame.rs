@@ -37,6 +37,7 @@ use pkcore::hand_history::ReplayStreet;
 
 use crate::config::View;
 use crate::game::{Event, Game, RecordState};
+use crate::odds::{self, Odds};
 
 /// Everything on screen at one moment.
 ///
@@ -80,6 +81,8 @@ pub struct Frame {
     pub view: View,
     /// The street being bet, or the last one dealt.
     pub street: ReplayStreet,
+    /// Win percents and the outs bar, when odds are on and every live card is up.
+    pub odds: Option<Odds>,
 }
 
 /// One occupied seat on screen.
@@ -333,12 +336,51 @@ impl Frame {
             record: game.record_state(),
             view,
             street,
+            odds: None,
         }
+    }
+
+    /// The frame for the moment `game` is on, with the win percents worked
+    /// out: [`Frame::new`], then [`odds::compute`] on what it shows.
+    ///
+    /// `odds` stays `None` when any live seat's card is face down, when
+    /// fewer than two seats are live, and once the hand has paid out.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::check::check;
+    /// use bowery::config::{Config, View};
+    /// use bowery::frame::Frame;
+    /// use bowery::game::Game;
+    ///
+    /// let config = Config::from_yaml("
+    /// mode: play
+    /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
+    /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
+    /// ").unwrap();
+    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// assert!(Frame::with_odds(&game, View::All).odds.is_some());
+    /// // Seen from seat 0, the bot's cards are down: nothing to count.
+    /// assert!(Frame::with_odds(&game, View::Seat).odds.is_none());
+    /// ```
+    #[must_use]
+    pub fn with_odds(game: &Game, view: View) -> Self {
+        let mut frame = Self::new(game, view);
+        frame.odds = odds::compute(
+            game.table(),
+            &frame.seats,
+            &frame.board,
+            frame.result.is_some(),
+            game.seed(),
+        );
+        frame
     }
 }
 
 impl fmt::Display for Frame {
-    /// The caption, the board and pot, then one line per seat.
+    /// The caption, the board and pot, then one line per seat, ending in the
+    /// seat's win percent when the frame has odds.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.caption)?;
         let board: Vec<String> = self
@@ -348,8 +390,8 @@ impl fmt::Display for Frame {
             .map(ToString::to_string)
             .collect();
         writeln!(f, "[{}] POT {}", board.join(" "), format_chips(self.pot))?;
-        for seat in &self.seats {
-            writeln!(
+        for (index, seat) in self.seats.iter().enumerate() {
+            write!(
                 f,
                 "{:>2} {:<16} {:>11} {} {} {}",
                 seat.seat,
@@ -359,6 +401,14 @@ impl fmt::Display for Frame {
                 seat.cards[1],
                 seat.status
             )?;
+            let percent = self
+                .odds
+                .as_ref()
+                .and_then(|odds| odds.percents.get(index).copied().flatten());
+            if let Some(percent) = percent {
+                write!(f, " {percent:>3}%")?;
+            }
+            writeln!(f)?;
         }
         Ok(())
     }
