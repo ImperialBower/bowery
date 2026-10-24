@@ -28,6 +28,14 @@ timestamp: '2026-10-22T00:00:00Z'
   colours as attributes, no CSS or script. Hole cards that are up carry
   `data-card="5♦"`, which is what `draw__seat_view_draws_no_hidden_card`
   looks for.
+- **The theme is CSS, not the renderer.** The attribute colours are the
+  fallback: stills, and the first frame before `bowery.css` arrives. In the
+  element, `js/bowery.css` selects the SVG's classes (`.seat.to-act .plate`,
+  `.card.red text`, `.bet.raise .slot`, ...) and a stylesheet rule beats a
+  presentation attribute, so recolouring never touches `draw` or the golden
+  files. Every colour is a `--bowery-*` property on `:host`; a page can
+  override any of them. A new seat or bet state needs a class here and a
+  rule there.
 - **Golden files.** `tests/golden/*.svg`, compared byte for byte.
   `BOWERY_BLESS=1 cargo test --test draw` rewrites them. Render them with
   `rsvg-convert` to look before accepting.
