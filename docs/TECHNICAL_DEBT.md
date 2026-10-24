@@ -121,11 +121,13 @@ are as the reviewer reported them.
 
 ### Release and supply chain
 
-- [ ] 🤖 ✔ **`actions/*` unpinned in jobs that publish** — `checkout@v7`,
+- [x] 🤖 ✔ **`actions/*` unpinned in jobs that publish** — `checkout@v7`,
   `upload-artifact@v4`, `download-artifact@v4`, `setup-node@v4` are mutable
   tags in jobs with `id-token: write`. Third-party actions are already pinned.
   Suggested: pin to SHAs with a version comment.
   (`.github/workflows/release.yml:53,71,88,107,110,129,130`)
+  **Fixed 2026-10-23** in `release.yml`. `ci.yaml` and `security.yaml`
+  still use tags; they hold no publish tokens.
 - [ ] 🤖 **Floating toolchain in the release build** — `stable` and an
   unpinned `wasm-pack` make the published wasm depend on the tag day.
   Suggested: pin both, or record them in the manifest.

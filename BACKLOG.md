@@ -10,6 +10,8 @@
   2026) on crates.io, npm (with provenance) and GitHub. See
   [docs/EPIC-110_Bowery.md](docs/EPIC-110_Bowery.md).
 - **v0.1.1** (22 October 2026): trusted publishing (OIDC) only; no stored tokens.
+- **v0.1.2** (prepared 23 October 2026): the four review bugs above, and
+  `release.yml` pinned. Tag to publish.
 - **Release check** (`2f9e919`): `scripts/dist.sh` refuses a README whose CDN
   link is not the crate version. In `CHANGELOG.md` under Unreleased.
 
@@ -46,7 +48,7 @@ against the code by hand:
 - [ ] 🤖 `next_hand` mutates, then can fail (`src/game.rs:1087`). Checked: not observable today; test added.
 - [x] 🤖 `table:` override is documented and checked but never applied (`src/game.rs:1201`).
 - [x] 🤖 `check` misses play rules: button, blinds, zero stacks (`src/check.rs:189`).
-- [ ] 🤖 `actions/*` unpinned in the publishing jobs (`.github/workflows/release.yml:53`).
+- [x] 🤖 `actions/*` unpinned in the publishing jobs (`.github/workflows/release.yml:53`).
 
 See [docs/TECHNICAL_DEBT.md](docs/TECHNICAL_DEBT.md).
 

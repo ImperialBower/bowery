@@ -28,9 +28,11 @@
 # "Allow npm publish" ticked: without it npm allows only `npm stage publish`
 # and refuses this one with "403 OIDC permission denied for this action".
 #
-# Third-party actions are pinned to commit SHAs, since what this workflow
-# builds is published; the crates.io job uses only the Rust project's own
-# auth action, and installs Rust with the runner's own rustup. Bump a pin by its tag's commit:
+# Every action, GitHub's own `actions/*` included, is pinned to a commit SHA,
+# since what this workflow builds is published and its jobs hold publish
+# tokens; a tag can be moved. The crates.io job uses only the Rust project's
+# own auth action, and installs Rust with the runner's own rustup. Bump a pin
+# by its tag's commit:
 # `git ls-remote https://github.com/<owner>/<action> <ref>`.
 name: Release
 
@@ -50,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master, 2026-10-22
         with:
           toolchain: stable
@@ -68,7 +70,7 @@ jobs:
           tar czf "bowery-$TAG.tar.gz" -C dist/bowery .
           ls -l "bowery-$TAG.tar.gz" dist/bowery
           cat dist/bowery/MANIFEST.sha256
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release
           path: |
@@ -85,7 +87,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Rust stable, with the runner's rustup
         run: rustup toolchain install stable --profile minimal && rustup default stable
       - name: A short-lived crates.io token for this workflow (trusted publishing)
@@ -104,10 +106,10 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
@@ -126,8 +128,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release
           path: artifact

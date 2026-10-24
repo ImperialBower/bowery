@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-23
+
 ### Fixed
 
 - **Arrow keys in the controls.** Arrow, Home and End in the seat picker or
@@ -20,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Every action in the release workflow is pinned to a commit.** GitHub's
+  own `actions/*` were on tags, which can be moved, in the jobs that hold
+  the publish tokens.
 - **The release checks the README.** `scripts/dist.sh` refuses a README whose
   `@imperialbower/bowery@<version>` CDN link is not the crate's version. The
   link stays exact: the element loads its glue and wasm from beside it, and a
