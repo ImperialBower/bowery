@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   linked from the README. `.github/workflows/pages.yaml` publishes `site/`
   from `main` after the browser proof passes, without the proof's own pages.
 
+### Changed
+
+- **A colour theme in `bowery.css`.** Light is warm paper, dark is slate
+  "night": light card faces, red pips, patterned backs, the seat to act in a
+  hue nothing else uses (amber on light, teal on dark), folded seats faded,
+  a bet or raise as a warm pill, the pot in gold. Every colour is a
+  `--bowery-*` custom property on `:host`, so a page can override any of
+  them. The SVG the renderer emits is unchanged: the rules select its
+  classes and win over its own fill and stroke attributes.
+
 ## [0.1.2] - 2026-10-23
 
 ### Fixed

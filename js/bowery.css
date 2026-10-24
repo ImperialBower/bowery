@@ -1,38 +1,208 @@
 /* <bowery-table>: loaded into the element's shadow root, so nothing here
-   reaches the page. Black on white, 2 px strokes, the system monospace;
-   :host([data-dark]) when the page is dark. No fonts, no url(). */
+   reaches the page. The renderer writes its own fill/stroke on every SVG
+   node; a rule here wins over those, so the whole theme is this file and
+   the SVG never changes. Light by default, :host([data-dark]) when the
+   page is dark. The system monospace. No fonts, no url(). */
+
+/* ---- palette: light ("paper") ---- */
 :host {
-  --bowery-bg: #ffffff;
-  --bowery-fg: #000000;
-  --bowery-to-act: #ffe94d;
+  --bowery-bg: #f6f1e7;
+  --bowery-fg: #2b2823;
+  --bowery-muted: #7a7268;
+  --bowery-line: #4a4540;
+  --bowery-felt: #ece4d3;
+  --bowery-rail: #8c7a5c;
+  --bowery-plate: #fffdf8;
+  --bowery-slot: #b9ae9a;
+  --bowery-marks: #9a6b00;
+  --bowery-pot: #2b2823;
+  --bowery-card: #ffffff;
+  --bowery-card-line: #4a4540;
+  --bowery-pip: #1f1d1a;
+  --bowery-pip-red: #b4232a;
+  --bowery-back: #4a6fa5;
+  --bowery-back-line: #2f4a73;
+  --bowery-back-pattern: #cbd8ea;
+  --bowery-to-act: #fff2a8;
+  --bowery-to-act-line: #e0a800;
+  --bowery-to-act-fg: #2b2823;
+  --bowery-to-act-on: #2b2823;
+  --bowery-fold-opacity: 0.5;
+  --bowery-bet-bg: #fffdf8;
+  --bowery-bet-fg: #2b2823;
+  --bowery-raise: #e0a800;
+  --bowery-raise-fg: #2b2823;
+  --bowery-btn-bg: #fffdf8;
+  --bowery-btn-line: #4a4540;
+  --bowery-btn-hover-bg: #2b2823;
+  --bowery-btn-hover-fg: #fffdf8;
   display: block;
   max-width: 100%;
-  border: 2px solid var(--bowery-fg);
+  border: 2px solid var(--bowery-line);
   background: var(--bowery-bg);
   color: var(--bowery-fg);
   font-family: ui-monospace, Menlo, Consolas, monospace;
   font-size: 13px;
 }
+
+/* ---- palette: dark ("night") ---- */
 :host([data-dark]) {
-  --bowery-bg: #111111;
-  --bowery-fg: #f2f2f2;
-  --bowery-to-act: #5e5200;
+  --bowery-bg: #171a21;
+  --bowery-fg: #d7dce3;
+  --bowery-muted: #8e98a8;
+  --bowery-line: #4e5a6c;
+  --bowery-felt: #1b2230;
+  --bowery-rail: #3b4556;
+  --bowery-plate: #222835;
+  --bowery-slot: #3b4556;
+  --bowery-marks: #7fd1ff;
+  --bowery-pot: #ffd27a;
+  --bowery-card: #e8ebf0;
+  --bowery-card-line: #9aa6b8;
+  --bowery-pip: #1a1d24;
+  --bowery-pip-red: #d64545;
+  --bowery-back: #2f3a4f;
+  --bowery-back-line: #6b7a94;
+  --bowery-back-pattern: #7c8aa3;
+  --bowery-to-act: #0f3a46;
+  --bowery-to-act-line: #2ed3b7;
+  --bowery-to-act-fg: #ffffff;
+  --bowery-to-act-on: #0b1a1f;
+  --bowery-fold-opacity: 0.35;
+  --bowery-bet-bg: #222835;
+  --bowery-bet-fg: #ffd27a;
+  --bowery-raise: #ff9f43;
+  --bowery-raise-fg: #171a21;
+  --bowery-btn-bg: #222835;
+  --bowery-btn-line: #4e5a6c;
+  --bowery-btn-hover-bg: #2ed3b7;
+  --bowery-btn-hover-fg: #0b1a1f;
 }
+
 :host(:focus-visible) {
-  outline: 3px solid var(--bowery-to-act);
+  outline: 3px solid var(--bowery-to-act-line);
   outline-offset: 2px;
 }
+
+/* ---- the drawing ---- */
 .stage svg {
   display: block;
   max-width: 100%;
   height: auto;
 }
+.bowery .bg {
+  fill: var(--bowery-bg);
+}
+.bowery .oval {
+  fill: var(--bowery-felt);
+  stroke: var(--bowery-rail);
+}
+.bowery .board .slot {
+  stroke: var(--bowery-slot);
+}
+.bowery .pot {
+  fill: var(--bowery-pot);
+}
+.bowery .caption,
+.bowery .strip,
+.bowery .street {
+  fill: var(--bowery-muted);
+}
+
+/* seats: ring plates and ledger rows */
+.bowery .seat .plate {
+  fill: var(--bowery-plate);
+  stroke: var(--bowery-line);
+}
+.bowery .seat > text {
+  fill: var(--bowery-fg);
+}
+.bowery .seat > .marks {
+  fill: var(--bowery-marks);
+}
+.bowery .seat > line {
+  stroke: var(--bowery-line);
+}
+.bowery .seat.to-act .plate {
+  fill: var(--bowery-to-act);
+  stroke: var(--bowery-to-act-line);
+}
+.bowery .seat.to-act > text {
+  fill: var(--bowery-to-act-fg);
+}
+.bowery .seat.all-in .plate {
+  stroke: var(--bowery-raise);
+}
+.bowery .seat.folded,
+.bowery .seat.out {
+  opacity: var(--bowery-fold-opacity);
+}
+.bowery .seat.folded .plate,
+.bowery .seat.out .plate {
+  fill: var(--bowery-bg);
+}
+.bowery .seat.folded > text,
+.bowery .seat.out > text {
+  fill: var(--bowery-muted);
+}
+
+/* cards: light faces so they lift off the table; a patterned back */
+.bowery .card rect {
+  fill: var(--bowery-card);
+  stroke: var(--bowery-card-line);
+}
+.bowery .card text {
+  fill: var(--bowery-pip);
+}
+.bowery .card.red text {
+  fill: var(--bowery-pip-red);
+}
+.bowery .card.back rect {
+  fill: var(--bowery-back);
+  stroke: var(--bowery-back-line);
+}
+.bowery .card.back path {
+  stroke: var(--bowery-back-pattern);
+}
+
+/* bets: a call is outlined, a bet or raise is a solid warm pill */
+.bowery .bet .slot {
+  fill: var(--bowery-bet-bg);
+  stroke: var(--bowery-line);
+}
+.bowery .bet .chips {
+  fill: var(--bowery-bet-fg);
+}
+.bowery .bet.raise .slot {
+  fill: var(--bowery-raise);
+  stroke: var(--bowery-raise);
+}
+.bowery .bet.raise .chips {
+  fill: var(--bowery-raise-fg);
+}
+.bowery .bet.check .slot {
+  fill: none;
+  stroke: var(--bowery-slot);
+}
+.bowery .bet.check .chips,
+.bowery .bet.fold {
+  fill: var(--bowery-muted);
+}
+.bowery .bet.to-act .slot {
+  fill: var(--bowery-to-act);
+  stroke: var(--bowery-to-act-line);
+}
+.bowery .bet.to-act .chips {
+  fill: var(--bowery-to-act-fg);
+}
+
+/* ---- the bar ---- */
 .bar {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  border-top: 2px solid var(--bowery-fg);
+  border-top: 2px solid var(--bowery-line);
   padding: 6px 8px;
 }
 .bar:empty {
@@ -43,9 +213,9 @@ select,
 input {
   font: inherit;
   color: var(--bowery-fg);
-  background: var(--bowery-bg);
-  border: 2px solid var(--bowery-fg);
-  border-radius: 0;
+  background: var(--bowery-btn-bg);
+  border: 2px solid var(--bowery-btn-line);
+  border-radius: 6px;
   padding: 2px 8px;
 }
 button {
@@ -54,8 +224,25 @@ button {
 }
 button:hover,
 button:focus-visible {
-  background: var(--bowery-fg);
-  color: var(--bowery-bg);
+  background: var(--bowery-btn-hover-bg);
+  border-color: var(--bowery-btn-hover-bg);
+  color: var(--bowery-btn-hover-fg);
+}
+button[data-control='raise'],
+button[data-control='all_in'],
+button[data-control='take'] {
+  background: var(--bowery-to-act-line);
+  border-color: var(--bowery-to-act-line);
+  color: var(--bowery-to-act-on);
+}
+button[data-control='fold'] {
+  border-color: var(--bowery-pip-red);
+  color: var(--bowery-pip-red);
+}
+button[data-control='fold']:hover,
+button[data-control='fold']:focus-visible {
+  background: var(--bowery-pip-red);
+  color: #ffffff;
 }
 input[type='number'] {
   width: 9ch;

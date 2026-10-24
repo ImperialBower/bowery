@@ -21,3 +21,6 @@
 * **Update**: three review bugs fixed test-first — keyboard seek in the shadow DOM (`composedPath`), `check` play rules (button on the table, blinds and stacks at least 1, big ≥ small), `check` refuses `table` beside a recorded hand. `next_hand` non-atomicity probed: not observable; covered by a test. See [config and check](concepts/config-and-check.md).
 * **Update**: v0.1.2 prepared: `release.yml` pins `actions/*` to commit SHAs (checkout v7.0.1, upload-artifact v4.6.2, download-artifact v4.3.0, setup-node v4.4.0); versions at 0.1.2. See [release](processes/release.md).
 * **Update**: the demo goes to GitHub Pages (`.github/workflows/pages.yaml`, from `main`, after `make e2e`; `site/e2e/` left out; actions pinned). Needs Settings → Pages → Source: GitHub Actions. See [release](processes/release.md).
+
+## 2026-10-24
+* **Update**: `js/bowery.css` carries a colour theme (paper light, slate "night" dark) that recolours the renderer's SVG by class; the SVG and golden files are untouched. See [frame and draw](concepts/frame-and-draw.md).
