@@ -68,14 +68,14 @@ Every release is built and published by this repository's
 ## In Rust
 
 ```rust
-use bowery::check::check;
+use bowery::check::Checked;
 use bowery::config::{Config, View};
-use bowery::draw::{Theme, svg};
+use bowery::draw::{Renderer, Theme};
 use bowery::game::Game;
 
 let config = Config::from_yaml(yaml)?;
-let game = Game::new(check(&config).map_err(|problems| problems[0].clone())?)?;
-let picture = svg(&game.frame(View::All), config.layout, 680, Theme::Light);
+let game = Game::new(Checked::new(&config).map_err(|problems| problems[0].clone())?)?;
+let picture = Renderer::svg(&game.frame(View::All), config.layout, 680, Theme::Light);
 ```
 
 `cargo run --example bowery-still -- fixtures/the_hand.yaml --layout spotlight --at river`

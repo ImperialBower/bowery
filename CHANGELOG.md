@@ -14,7 +14,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `use bowery::odds::Odds;`. The module's private helpers moved onto `Odds`
   and `OutsBar` as well, so `src/odds.rs` has no free functions. The next
   release is therefore `0.3.0`.
+- **Breaking: `frame::format_chips` is now `Frame::format_chips`.** Same
+  argument, same text. `frame.rs`'s private helpers (`occupied`, `status`,
+  `faces`, `last_action`, `street_name`, `caption`) moved onto `Frame` too.
+- **Breaking (`wasm` feature): `element::problems_json` and
+  `element::version` are now `element::Table::problems_json` and
+  `element::Table::version`.** Same results. The JavaScript surface does not
+  change: `BoweryTable.version()` and the JSON a bad config returns are as
+  before.
+- **Breaking: the rest of the public free functions moved onto types.** Same
+  arguments, same results:
 
+  | Was | Now |
+  |---|---|
+  | `check::check(&config)` | `check::Checked::new(&config)` |
+  | `draw::svg(frame, layout, width, theme)` | `draw::Renderer::svg(frame, layout, width, theme)` |
+  | `draw::geometry::plan(…)` | `draw::geometry::Plan::new(…)` |
+  | `draw::geometry::outs_per_row(width)` | `draw::geometry::Plan::outs_per_row(width)` |
+  | `draw::geometry::strip_lines(folded, width)` | `draw::geometry::Plan::strip_lines(folded, width)` |
+  | `bowery::version()` | `bowery::Bowery::version()` |
+
+  `Renderer` and `Bowery` are new unit structs. Every private helper sits on
+  its type too (`Checked`, `Game`, `Plan`, `Renderer`), and every test file's
+  helpers on a test-only `Fixture`, so the crate has no free functions apart
+  from `main` in the example. Nothing downstream calls the old names: bower
+  does not depend on bowery yet, and the JavaScript surface is unchanged.
 - **Odds percents now treat a folded seat's known cards as dead.** pkcore
   `0.18.0` added `EquityRequest::dead` (pkcore EPIC-123); bowery passes each
   folded seat's known hole cards through it, so they can no longer come back

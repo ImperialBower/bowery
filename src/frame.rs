@@ -6,7 +6,7 @@
 //! frame, and nothing drawn from it can leak one.
 //!
 //! ```
-//! use bowery::check::check;
+//! use bowery::check::Checked;
 //! use bowery::config::{Config, View};
 //! use bowery::frame::CardFace;
 //! use bowery::game::Game;
@@ -17,7 +17,7 @@
 //! table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
 //! players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
 //! ").unwrap();
-//! let game = Game::new(check(&config).unwrap()).unwrap();
+//! let game = Game::new(Checked::new(&config).unwrap()).unwrap();
 //! let frame = game.frame(View::Seat);
 //!
 //! assert!(matches!(frame.seats[0].cards[0], CardFace::Up(_)));
@@ -44,7 +44,7 @@ use crate::odds::Odds;
 /// # Examples
 ///
 /// ```
-/// use bowery::check::check;
+/// use bowery::check::Checked;
 /// use bowery::config::{Config, View};
 /// use bowery::game::Game;
 ///
@@ -53,7 +53,7 @@ use crate::odds::Odds;
 /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
 /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
 /// ").unwrap();
-/// let frame = Game::new(check(&config).unwrap()).unwrap().frame(View::All);
+/// let frame = Game::new(Checked::new(&config).unwrap()).unwrap().frame(View::All);
 /// assert_eq!(2, frame.seats.len());
 /// assert_eq!((1, 1), frame.moment);
 /// ```
@@ -90,7 +90,7 @@ pub struct Frame {
 /// # Examples
 ///
 /// ```
-/// use bowery::check::check;
+/// use bowery::check::Checked;
 /// use bowery::config::{Config, View};
 /// use bowery::frame::SeatStatus;
 /// use bowery::game::Game;
@@ -100,7 +100,7 @@ pub struct Frame {
 /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
 /// players: [ { seat: 0, name: Ann, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
 /// ").unwrap();
-/// let frame = Game::new(check(&config).unwrap()).unwrap().frame(View::All);
+/// let frame = Game::new(Checked::new(&config).unwrap()).unwrap().frame(View::All);
 /// assert_eq!("Ann", frame.seats[0].name);
 /// assert_eq!(SeatStatus::Live, frame.seats[0].status);
 /// ```
@@ -246,7 +246,12 @@ pub struct Award {
 
 impl fmt::Display for Award {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "seat {} wins {}", self.seat, format_chips(self.amount))
+        write!(
+            f,
+            "seat {} wins {}",
+            self.seat,
+            Frame::format_chips(self.amount)
+        )
     }
 }
 
@@ -261,7 +266,7 @@ impl Frame {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::{Config, View};
     /// use bowery::frame::Frame;
     /// use bowery::game::Game;
@@ -271,7 +276,7 @@ impl Frame {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(game.frame(View::All), Frame::new(&game, View::All));
     /// ```
     #[must_use]
@@ -290,23 +295,23 @@ impl Frame {
             .unwrap_or(ReplayStreet::Preflop);
         let viewer = game.config().seat.or(game.reader());
         let to_act = game.to_act();
-        let seats: Vec<SeatFrame> = occupied(table)
+        let seats: Vec<SeatFrame> = Self::occupied(table)
             .map(|(seat, chair)| {
-                let status = status(chair);
+                let status = Self::status(chair);
                 let visible = view == View::All || viewer == Some(seat) || shown;
                 SeatFrame {
                     seat,
                     name: chair.player.handle.clone(),
                     stack: chair.player.chips,
                     bet: chair.player.bet,
-                    cards: faces(chair, status, visible),
+                    cards: Self::faces(chair, status, visible),
                     status,
                     marks: Marks {
                         dealer: table.button == seat,
                         small_blind: table.determine_small_blind() == seat,
                         big_blind: table.determine_big_blind() == seat,
                     },
-                    last: last_action(&history, seat),
+                    last: Self::last_action(&history, seat),
                     to_act: to_act == Some(seat),
                 }
             })
@@ -327,7 +332,7 @@ impl Frame {
             .collect();
         Self {
             pot: table.pot + seats.iter().map(|seat| seat.bet).sum::<usize>(),
-            caption: caption(game.event(), street, &seats, table),
+            caption: Self::caption(game.event(), street, &seats, table),
             seats,
             board,
             to_act,
@@ -349,7 +354,7 @@ impl Frame {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::{Config, View};
     /// use bowery::frame::Frame;
     /// use bowery::game::Game;
@@ -359,7 +364,7 @@ impl Frame {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert!(Frame::with_odds(&game, View::All).odds.is_some());
     /// // Seen from seat 0, the bot's cards are down: nothing to count.
     /// assert!(Frame::with_odds(&game, View::Seat).odds.is_none());
@@ -389,14 +394,19 @@ impl fmt::Display for Frame {
             .flatten()
             .map(ToString::to_string)
             .collect();
-        writeln!(f, "[{}] POT {}", board.join(" "), format_chips(self.pot))?;
+        writeln!(
+            f,
+            "[{}] POT {}",
+            board.join(" "),
+            Self::format_chips(self.pot)
+        )?;
         for (index, seat) in self.seats.iter().enumerate() {
             write!(
                 f,
                 "{:>2} {:<16} {:>11} {} {} {}",
                 seat.seat,
                 seat.name,
-                format_chips(seat.stack),
+                Self::format_chips(seat.stack),
                 seat.cards[0],
                 seat.cards[1],
                 seat.status
@@ -414,166 +424,175 @@ impl fmt::Display for Frame {
     }
 }
 
-/// Chips as people read them: `260,200`. From a billion they are shortened
-/// to `1.25B`, from a trillion to `1.25T`, and from a thousand trillion to
-/// whole trillions, so the text is never longer than 11 characters.
-///
-/// # Examples
-///
-/// ```
-/// use bowery::frame::format_chips;
-///
-/// assert_eq!("575,700", format_chips(575_700));
-/// assert_eq!("999,999,999", format_chips(999_999_999));
-/// assert_eq!("4.29B", format_chips(4_294_967_295));
-/// ```
-#[must_use]
-pub fn format_chips(chips: usize) -> String {
-    // u64, not usize: usize is 32 bits on wasm32, where a trillion does not fit.
-    const BILLION: u64 = 1_000_000_000;
-    const TRILLION: u64 = 1_000_000_000_000;
-    let chips = u64::try_from(chips).unwrap_or(u64::MAX);
-    let shorten = |unit: u64, suffix: char| {
-        let whole = chips / unit;
-        let hundredths = chips % unit / (unit / 100);
-        if whole >= 1_000 {
-            format!("{whole}{suffix}")
-        } else {
-            format!("{whole}.{hundredths:02}{suffix}")
-        }
-    };
-    if chips >= TRILLION {
-        return shorten(TRILLION, 'T');
-    }
-    if chips >= BILLION {
-        return shorten(BILLION, 'B');
-    }
-    let digits = chips.to_string();
-    let mut grouped = String::with_capacity(digits.len() + digits.len() / 3);
-    for (index, digit) in digits.chars().enumerate() {
-        if index > 0 && (digits.len() - index).is_multiple_of(3) {
-            grouped.push(',');
-        }
-        grouped.push(digit);
-    }
-    grouped
-}
-
-/// The occupied chairs of `table`, with their seat numbers.
-fn occupied(table: &Table) -> impl Iterator<Item = (u8, &Seat)> {
-    (0..=u8::MAX)
-        .map_while(|seat| table.seats.get_seat(seat).map(|chair| (seat, chair)))
-        .filter(|(_, chair)| !chair.is_empty())
-}
-
-fn status(chair: &Seat) -> SeatStatus {
-    match chair.player.state {
-        PlayerState::Fold => SeatStatus::Folded,
-        PlayerState::Out => SeatStatus::Out,
-        _ if chair.player.chips == 0
-            && (chair.player.bet > 0 || matches!(chair.player.state, PlayerState::AllIn(_))) =>
-        {
-            SeatStatus::AllIn
-        }
-        _ => SeatStatus::Live,
-    }
-}
-
-/// The two hole cards as the view shows them: none for a folded seat or one
-/// out of the hand, up when `visible`, down otherwise.
-fn faces(chair: &Seat, status: SeatStatus, visible: bool) -> [CardFace; 2] {
-    let mut faces = [CardFace::None; 2];
-    if matches!(status, SeatStatus::Folded | SeatStatus::Out) {
-        return faces;
-    }
-    for (face, card) in faces.iter_mut().zip(chair.cards.as_slice()) {
-        *face = match (*card == Card::BLANK, visible) {
-            (true, _) => CardFace::None,
-            (false, true) => CardFace::Up(*card),
-            (false, false) => CardFace::Down,
+impl Frame {
+    /// Chips as people read them: `260,200`. From a billion they are shortened
+    /// to `1.25B`, from a trillion to `1.25T`, and from a thousand trillion to
+    /// whole trillions, so the text is never longer than 11 characters.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::frame::Frame;
+    ///
+    /// assert_eq!("575,700", Frame::format_chips(575_700));
+    /// assert_eq!("999,999,999", Frame::format_chips(999_999_999));
+    /// assert_eq!("4.29B", Frame::format_chips(4_294_967_295));
+    /// ```
+    #[must_use]
+    pub fn format_chips(chips: usize) -> String {
+        // u64, not usize: usize is 32 bits on wasm32, where a trillion does not fit.
+        const BILLION: u64 = 1_000_000_000;
+        const TRILLION: u64 = 1_000_000_000_000;
+        let chips = u64::try_from(chips).unwrap_or(u64::MAX);
+        let shorten = |unit: u64, suffix: char| {
+            let whole = chips / unit;
+            let hundredths = chips % unit / (unit / 100);
+            if whole >= 1_000 {
+                format!("{whole}{suffix}")
+            } else {
+                format!("{whole}.{hundredths:02}{suffix}")
+            }
         };
+        if chips >= TRILLION {
+            return shorten(TRILLION, 'T');
+        }
+        if chips >= BILLION {
+            return shorten(BILLION, 'B');
+        }
+        let digits = chips.to_string();
+        let mut grouped = String::with_capacity(digits.len() + digits.len() / 3);
+        for (index, digit) in digits.chars().enumerate() {
+            if index > 0 && (digits.len() - index).is_multiple_of(3) {
+                grouped.push(',');
+            }
+            grouped.push(digit);
+        }
+        grouped
     }
-    faces
-}
 
-/// The seat's last action since the last deal.
-fn last_action(history: &[&Event], seat: u8) -> Option<PlayerAction> {
-    history
-        .iter()
-        .rev()
-        .take_while(|event| !matches!(event, Event::Deal(_)))
-        .find_map(|event| match event {
-            Event::Action {
-                seat: actor,
-                action,
-                ..
-            } if *actor == seat => Some(*action),
-            _ => None,
-        })
-}
-
-fn street_name(street: ReplayStreet) -> &'static str {
-    match street {
-        ReplayStreet::Preflop => "Preflop",
-        ReplayStreet::Flop => "Flop",
-        ReplayStreet::Turn => "Turn",
-        ReplayStreet::River => "River",
+    /// The occupied chairs of `table`, with their seat numbers.
+    fn occupied(table: &Table) -> impl Iterator<Item = (u8, &Seat)> {
+        (0..=u8::MAX)
+            .map_while(|seat| table.seats.get_seat(seat).map(|chair| (seat, chair)))
+            .filter(|(_, chair)| !chair.is_empty())
     }
-}
 
-/// One line on the moment's event.
-fn caption(event: &Event, street: ReplayStreet, seats: &[SeatFrame], table: &Table) -> String {
-    let name = |seat: u8| {
-        seats
-            .iter()
-            .find(|candidate| candidate.seat == seat)
-            .map_or_else(
-                || format!("Seat {seat}"),
-                |candidate| candidate.name.clone(),
-            )
-    };
-    let bet = |seat: u8| {
-        seats
-            .iter()
-            .find(|candidate| candidate.seat == seat)
-            .map_or(0, |candidate| candidate.bet)
-    };
-    match event {
-        Event::Forced => "Preflop · blinds posted, cards dealt".to_string(),
-        Event::Action { seat, action, .. } => {
-            let verb = match action {
-                PlayerAction::Fold => "folds".to_string(),
-                PlayerAction::Check => "checks".to_string(),
-                PlayerAction::Call => format!("calls {}", format_chips(bet(*seat))),
-                PlayerAction::Bet(amount) => format!("bets {}", format_chips(*amount)),
-                PlayerAction::Raise(amount) => format!("raises to {}", format_chips(*amount)),
-                PlayerAction::AllIn => format!("is all in for {}", format_chips(bet(*seat))),
+    fn status(chair: &Seat) -> SeatStatus {
+        match chair.player.state {
+            PlayerState::Fold => SeatStatus::Folded,
+            PlayerState::Out => SeatStatus::Out,
+            _ if chair.player.chips == 0
+                && (chair.player.bet > 0
+                    || matches!(chair.player.state, PlayerState::AllIn(_))) =>
+            {
+                SeatStatus::AllIn
+            }
+            _ => SeatStatus::Live,
+        }
+    }
+
+    /// The two hole cards as the view shows them: none for a folded seat or one
+    /// out of the hand, up when `visible`, down otherwise.
+    fn faces(chair: &Seat, status: SeatStatus, visible: bool) -> [CardFace; 2] {
+        let mut faces = [CardFace::None; 2];
+        if matches!(status, SeatStatus::Folded | SeatStatus::Out) {
+            return faces;
+        }
+        for (face, card) in faces.iter_mut().zip(chair.cards.as_slice()) {
+            *face = match (*card == Card::BLANK, visible) {
+                (true, _) => CardFace::None,
+                (false, true) => CardFace::Up(*card),
+                (false, false) => CardFace::Down,
             };
-            format!("{} · {} {verb}", street_name(street), name(*seat))
         }
-        Event::Deal(street) => {
-            let cards: Vec<String> = match street {
-                ReplayStreet::Flop => table
-                    .board
-                    .iter()
-                    .take(3)
-                    .map(ToString::to_string)
-                    .collect(),
-                _ => table
-                    .board
-                    .iter()
-                    .last()
-                    .map(ToString::to_string)
-                    .into_iter()
-                    .collect(),
-            };
-            format!("{} · {}", street_name(*street), cards.join(" "))
+        faces
+    }
+
+    /// The seat's last action since the last deal.
+    fn last_action(history: &[&Event], seat: u8) -> Option<PlayerAction> {
+        history
+            .iter()
+            .rev()
+            .take_while(|event| !matches!(event, Event::Deal(_)))
+            .find_map(|event| match event {
+                Event::Action {
+                    seat: actor,
+                    action,
+                    ..
+                } if *actor == seat => Some(*action),
+                _ => None,
+            })
+    }
+
+    fn street_name(street: ReplayStreet) -> &'static str {
+        match street {
+            ReplayStreet::Preflop => "Preflop",
+            ReplayStreet::Flop => "Flop",
+            ReplayStreet::Turn => "Turn",
+            ReplayStreet::River => "River",
         }
-        Event::Return { seat, amount } => {
-            format!("{} takes back {}", name(*seat), format_chips(*amount))
+    }
+
+    /// One line on the moment's event.
+    fn caption(event: &Event, street: ReplayStreet, seats: &[SeatFrame], table: &Table) -> String {
+        let name = |seat: u8| {
+            seats
+                .iter()
+                .find(|candidate| candidate.seat == seat)
+                .map_or_else(
+                    || format!("Seat {seat}"),
+                    |candidate| candidate.name.clone(),
+                )
+        };
+        let bet = |seat: u8| {
+            seats
+                .iter()
+                .find(|candidate| candidate.seat == seat)
+                .map_or(0, |candidate| candidate.bet)
+        };
+        match event {
+            Event::Forced => "Preflop · blinds posted, cards dealt".to_string(),
+            Event::Action { seat, action, .. } => {
+                let verb = match action {
+                    PlayerAction::Fold => "folds".to_string(),
+                    PlayerAction::Check => "checks".to_string(),
+                    PlayerAction::Call => format!("calls {}", Self::format_chips(bet(*seat))),
+                    PlayerAction::Bet(amount) => format!("bets {}", Self::format_chips(*amount)),
+                    PlayerAction::Raise(amount) => {
+                        format!("raises to {}", Self::format_chips(*amount))
+                    }
+                    PlayerAction::AllIn => {
+                        format!("is all in for {}", Self::format_chips(bet(*seat)))
+                    }
+                };
+                format!("{} · {} {verb}", Self::street_name(street), name(*seat))
+            }
+            Event::Deal(street) => {
+                let cards: Vec<String> = match street {
+                    ReplayStreet::Flop => table
+                        .board
+                        .iter()
+                        .take(3)
+                        .map(ToString::to_string)
+                        .collect(),
+                    _ => table
+                        .board
+                        .iter()
+                        .last()
+                        .map(ToString::to_string)
+                        .into_iter()
+                        .collect(),
+                };
+                format!("{} · {}", Self::street_name(*street), cards.join(" "))
+            }
+            Event::Return { seat, amount } => {
+                format!("{} takes back {}", name(*seat), Self::format_chips(*amount))
+            }
+            Event::Showdown => "Showdown".to_string(),
+            Event::Award { seat, amount } => {
+                format!("{} wins {}", name(*seat), Self::format_chips(*amount))
+            }
         }
-        Event::Showdown => "Showdown".to_string(),
-        Event::Award { seat, amount } => format!("{} wins {}", name(*seat), format_chips(*amount)),
     }
 }
 
@@ -584,24 +603,24 @@ mod tests {
 
     #[test]
     fn format_chips__groups_thousands() {
-        assert_eq!("0", format_chips(0));
-        assert_eq!("999", format_chips(999));
-        assert_eq!("1,000", format_chips(1_000));
-        assert_eq!("287,100", format_chips(287_100));
-        assert_eq!("12,345,678", format_chips(12_345_678));
+        assert_eq!("0", Frame::format_chips(0));
+        assert_eq!("999", Frame::format_chips(999));
+        assert_eq!("1,000", Frame::format_chips(1_000));
+        assert_eq!("287,100", Frame::format_chips(287_100));
+        assert_eq!("12,345,678", Frame::format_chips(12_345_678));
     }
 
     #[test]
     fn format_chips__shortens_from_a_billion() {
-        assert_eq!("1.00B", format_chips(1_000_000_000));
-        assert_eq!("42.94B", format_chips(42_949_672_950));
-        assert_eq!("1.50T", format_chips(1_500_000_000_000));
+        assert_eq!("1.00B", Frame::format_chips(1_000_000_000));
+        assert_eq!("42.94B", Frame::format_chips(42_949_672_950));
+        assert_eq!("1.50T", Frame::format_chips(1_500_000_000_000));
     }
 
     #[test]
     fn format_chips__never_longer_than_eleven() {
         for chips in [999_999_999, 999_999_999_999, usize::MAX] {
-            assert!(format_chips(chips).chars().count() <= 11, "{chips}");
+            assert!(Frame::format_chips(chips).chars().count() <= 11, "{chips}");
         }
     }
 
@@ -629,6 +648,6 @@ mod tests {
 
     #[test]
     fn street_name__capitalised() {
-        assert_eq!("River", street_name(ReplayStreet::River));
+        assert_eq!("River", Frame::street_name(ReplayStreet::River));
     }
 }

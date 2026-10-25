@@ -33,7 +33,7 @@
 //! ## Quick start
 //!
 //! ```
-//! use bowery::check::check;
+//! use bowery::check::Checked;
 //! use bowery::config::{Config, Mode};
 //!
 //! let config = Config::from_yaml("
@@ -44,12 +44,12 @@
 //!   - { seat: 3, name: Robo, stack: 200, bot: tight_aggressive }
 //! ").unwrap();
 //!
-//! let checked = check(&config).unwrap();
+//! let checked = Checked::new(&config).unwrap();
 //! assert_eq!(Mode::Play, checked.config().mode);
 //!
 //! // A config that is not true never gets that far.
 //! let typo = Config::from_yaml("mode: play\nplayers: [ { seat: 0, stack: 200, bot: shark } ]\n").unwrap();
-//! assert!(check(&typo).is_err());
+//! assert!(Checked::new(&typo).is_err());
 //! ```
 
 pub mod check;
@@ -63,25 +63,46 @@ pub mod odds;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
-/// Returns the version of this crate, as `Cargo.toml` declares it.
+/// The crate itself: what is true of bowery as a whole rather than of one
+/// table.
 ///
 /// # Examples
 ///
 /// ```
-/// let version = bowery::version();
-/// assert!(!version.is_empty());
+/// use bowery::Bowery;
+///
+/// assert_eq!(env!("CARGO_PKG_VERSION"), Bowery::version());
 /// ```
-#[must_use]
-pub fn version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Bowery;
+
+impl Bowery {
+    /// Returns the version of this crate, as `Cargo.toml` declares it.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let version = bowery::Bowery::version();
+    /// assert!(!version.is_empty());
+    /// ```
+    #[must_use]
+    pub fn version() -> &'static str {
+        env!("CARGO_PKG_VERSION")
+    }
 }
 
 #[cfg(test)]
+#[allow(non_snake_case)]
 mod tests {
     use super::*;
 
     #[test]
-    fn version_matches_the_manifest() {
-        assert_eq!(env!("CARGO_PKG_VERSION"), version());
+    fn bowery__version_matches_the_manifest() {
+        assert_eq!(env!("CARGO_PKG_VERSION"), Bowery::version());
+    }
+
+    #[test]
+    fn bowery__debug_names_the_crate() {
+        assert_eq!("Bowery", format!("{Bowery:?}"));
     }
 }

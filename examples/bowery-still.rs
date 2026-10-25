@@ -20,23 +20,28 @@
 use std::error::Error;
 use std::{env, fs};
 
-use bowery::check::check;
+use bowery::check::Checked;
 use bowery::config::{Config, Layout, Mode, Moment, View};
-use bowery::draw::{Theme, svg};
+use bowery::draw::{Renderer, Theme};
 use bowery::game::Game;
 use pkcore::hand_history::HandHistory;
 
-/// The config in `yaml`, or a replay of it when it is a bare hand history.
-fn config(yaml: &str) -> Result<Config, Box<dyn Error>> {
-    if let Ok(config) = Config::from_yaml(yaml) {
-        return Ok(config);
+/// What the example reads from its input file.
+struct Still;
+
+impl Still {
+    /// The config in `yaml`, or a replay of it when it is a bare hand history.
+    fn config(yaml: &str) -> Result<Config, Box<dyn Error>> {
+        if let Ok(config) = Config::from_yaml(yaml) {
+            return Ok(config);
+        }
+        let hand = HandHistory::from_yaml(yaml)
+            .map_err(|error| format!("neither a config nor a hand history: {error:?}"))?;
+        let mut config = Config::from_yaml("mode: replay\n")?;
+        config.mode = Mode::Replay;
+        config.hand = Some(hand);
+        Ok(config)
     }
-    let hand = HandHistory::from_yaml(yaml)
-        .map_err(|error| format!("neither a config nor a hand history: {error:?}"))?;
-    let mut config = Config::from_yaml("mode: replay\n")?;
-    config.mode = Mode::Replay;
-    config.hand = Some(hand);
-    Ok(config)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -50,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .and_then(|index| args.get(index + 1))
             .map(String::as_str)
     };
-    let config = config(&fs::read_to_string(path)?)?;
+    let config = Still::config(&fs::read_to_string(path)?)?;
     let layout: Layout = option("--layout").map_or(Ok(config.layout), str::parse)?;
     let width: u32 = option("--width").map_or(Ok(680), str::parse)?;
     let theme = if args.iter().any(|arg| arg == "--dark") {
@@ -58,7 +63,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         Theme::Light
     };
-    let checked = check(&config).map_err(|problems| {
+    let checked = Checked::new(&config).map_err(|problems| {
         problems
             .iter()
             .map(ToString::to_string)
@@ -88,6 +93,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         game.frame(view)
     };
-    println!("{}", svg(&frame, layout, width, theme));
+    println!("{}", Renderer::svg(&frame, layout, width, theme));
     Ok(())
 }

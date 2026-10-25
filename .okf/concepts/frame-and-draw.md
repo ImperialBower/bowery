@@ -15,22 +15,22 @@ timestamp: '2026-10-24T00:00:00Z'
   built, so a `seat` view never holds another seat's card before a showdown.
   The viewer is the config's `seat`, else the reader; with neither, every
   card is down.
-- **Geometry first.** `plan(layout, live, folded, width)` returns every box
+- **Geometry first.** `Plan::new(layout, live, folded, outs, width)` returns every box
   as a `Rect`. Each box is sized for its widest text, using monospace metrics:
   11 px text is 6.6 px a character, a name is cut to 16 characters, and
-  `format_chips` never gives more than 11. So a box holds its text, and
+  `Frame::format_chips` never gives more than 11. So a box holds its text, and
   boxes that do not intersect cannot cover each other's text.
-  `geometry__boxes_disjoint` is the proptest; `strip_lines` wraps spotlight's
+  `geometry__boxes_disjoint` is the proptest; `Plan::strip_lines` wraps spotlight's
   folded names, and plan and draw both use it, so they agree on its height.
 - **Ring** needs 520 px, and 574 px for its side columns; where its seats do
   not fit, it falls back to ledger.
 - **Ledger's one-line row** starts at `LEDGER_WIDE` (464 px), not `WIDE`
   (420 px, which spotlight uses for two seats beside the board): a one-line row
   has to hold the cards, a `100%` and the widest stack (`999,999,999`) on the
-  same baseline, and below 464 px they overlap. `geometry::ledger` and
-  `draw_row` both read `LEDGER_WIDE`, so the plan and the drawing agree; below
+  same baseline, and below 464 px they overlap. `Plan::ledger` and
+  `Renderer::draw_row` both read `LEDGER_WIDE`, so the plan and the drawing agree; below
   it a row is two lines and the percent ends the name line.
-- **One renderer.** `svg(frame, layout, width, theme)`: integer coordinates,
+- **One renderer.** `Renderer::svg(frame, layout, width, theme)`: integer coordinates,
   colours as attributes, no CSS or script. Hole cards that are up carry
   `data-card="5♦"`, which is what `draw__seat_view_draws_no_hidden_card`
   looks for.
@@ -46,7 +46,7 @@ timestamp: '2026-10-24T00:00:00Z'
   `BOWERY_BLESS=1 cargo test --test draw` rewrites them. Render them with
   `rsvg-convert` to look before accepting.
 - `usize` is 32 bits on wasm32: count chips in `u64` where they can pass four
-  billion (`format_chips`). `make wasm` catches an overflowing literal.
+  billion (`Frame::format_chips`). `make wasm` catches an overflowing literal.
 - **Odds.** `src/odds.rs`. `Game::frame_with_odds(view)` (and `Frame::with_odds`)
   fills `Frame.odds`; plain `frame` never asks pkcore. `Odds::compute` hands the live
   seats' hole cards and the board to pkcore's `EquityRequest`, seeded with the
@@ -67,8 +67,8 @@ timestamp: '2026-10-24T00:00:00Z'
   the river cards that win it the pot alone (a card that only splits does not
   count); a tie has no bar; zero outs reads `drawing dead`. The Hand at the
   turn is not that case: Negreanu holds one out. The bar sits under the pot
-  line (under the board in ledger), wraps after `outs_per_row` cards, and the
-  ring grows taller to hold it (`Plan.outs`, `OUTS_*`); it goes through `plan`,
+  line (under the board in ledger), wraps after `Plan::outs_per_row` cards, and the
+  ring grows taller to hold it (`Plan.outs`, `OUTS_*`); it goes through `Plan::new`,
   so the disjoint-boxes proptest covers it.
 - **Odds classes.** `.odds` is the percent on a plate or ledger row;
   `.outs .label` is the bar's caption and `.outs .dead` the drawing-dead text.

@@ -3,33 +3,38 @@
 #![allow(non_snake_case)]
 
 use bowery::config::Layout;
-use bowery::draw::geometry::{Plan, Rect, plan};
+use bowery::draw::geometry::{Plan, Rect};
 use proptest::prelude::*;
 
-fn overlapping(plan: &Plan) -> Option<(Rect, Rect)> {
-    let boxes = plan.boxes();
-    for (index, first) in boxes.iter().enumerate() {
-        for second in &boxes[index + 1..] {
-            if first.intersects(second) {
-                return Some((*first, *second));
+/// What the tests look for in a plan, and the layouts to try.
+struct Fixture;
+
+impl Fixture {
+    fn overlapping(plan: &Plan) -> Option<(Rect, Rect)> {
+        let boxes = plan.boxes();
+        for (index, first) in boxes.iter().enumerate() {
+            for second in &boxes[index + 1..] {
+                if first.intersects(second) {
+                    return Some((*first, *second));
+                }
             }
         }
+        None
     }
-    None
-}
 
-fn outside(plan: &Plan) -> Option<Rect> {
-    plan.boxes()
-        .into_iter()
-        .find(|rect| rect.x + rect.w > plan.width || rect.y + rect.h > plan.height)
-}
+    fn outside(plan: &Plan) -> Option<Rect> {
+        plan.boxes()
+            .into_iter()
+            .find(|rect| rect.x + rect.w > plan.width || rect.y + rect.h > plan.height)
+    }
 
-fn layouts() -> impl Strategy<Value = Layout> {
-    prop_oneof![
-        Just(Layout::Ring),
-        Just(Layout::Spotlight),
-        Just(Layout::Ledger)
-    ]
+    fn layouts() -> impl Strategy<Value = Layout> {
+        prop_oneof![
+            Just(Layout::Ring),
+            Just(Layout::Spotlight),
+            Just(Layout::Ledger)
+        ]
+    }
 }
 
 proptest! {
@@ -37,16 +42,16 @@ proptest! {
 
     #[test]
     fn geometry__boxes_disjoint(
-        layout in layouts(),
+        layout in Fixture::layouts(),
         live in prop::collection::vec(any::<bool>(), 2..=10),
         folded in prop::collection::vec("[A-Za-z ()]{1,21}", 0..=10),
         outs in prop::option::of(0usize..=44),
         width in 320u32..=1_400,
     ) {
-        let plan = plan(layout, &live, &folded, outs, width);
+        let plan = Plan::new(layout, &live, &folded, outs, width);
 
-        prop_assert_eq!(None, overlapping(&plan), "{:?} {} seats at {}", plan.layout, live.len(), width);
-        prop_assert_eq!(None, outside(&plan), "{:?} {} seats at {}", plan.layout, live.len(), width);
+        prop_assert_eq!(None, Fixture::overlapping(&plan), "{:?} {} seats at {}", plan.layout, live.len(), width);
+        prop_assert_eq!(None, Fixture::outside(&plan), "{:?} {} seats at {}", plan.layout, live.len(), width);
     }
 }
 
@@ -54,7 +59,7 @@ proptest! {
 fn geometry__every_seat_has_a_plate_but_folded_spotlight_seats() {
     let live = [true, false, true, false, true];
     for layout in [Layout::Ring, Layout::Ledger] {
-        let plan = plan(layout, &live, &[], None, 680);
+        let plan = Plan::new(layout, &live, &[], None, 680);
         assert!(
             plan.seats
                 .iter()
@@ -62,7 +67,7 @@ fn geometry__every_seat_has_a_plate_but_folded_spotlight_seats() {
             "{layout}"
         );
     }
-    let spotlight = plan(
+    let spotlight = Plan::new(
         Layout::Spotlight,
         &live,
         &["Seat 1".to_string(), "Seat 3".to_string()],
@@ -83,7 +88,7 @@ fn geometry__no_bar_without_outs() {
     for layout in [Layout::Ring, Layout::Spotlight, Layout::Ledger] {
         assert_eq!(
             None,
-            plan(layout, &[true, true], &[], None, 680).outs,
+            Plan::new(layout, &[true, true], &[], None, 680).outs,
             "{layout}"
         );
     }
@@ -92,7 +97,7 @@ fn geometry__no_bar_without_outs() {
 #[test]
 fn geometry__the_bar_is_a_box_when_outs_are_given() {
     for layout in [Layout::Ring, Layout::Spotlight, Layout::Ledger] {
-        let plan = plan(layout, &[true, true], &[], Some(5), 680);
+        let plan = Plan::new(layout, &[true, true], &[], Some(5), 680);
         let bar = plan.outs.expect("a bar");
         assert!(plan.boxes().contains(&bar), "{layout}");
     }
@@ -100,7 +105,7 @@ fn geometry__the_bar_is_a_box_when_outs_are_given() {
 
 #[test]
 fn geometry__ring_holds_ten_seats_in_the_book_column() {
-    let plan = plan(Layout::Ring, &[true; 10], &[], None, 680);
+    let plan = Plan::new(Layout::Ring, &[true; 10], &[], None, 680);
 
     assert_eq!(Layout::Ring, plan.layout);
     assert!((280..=320).contains(&plan.height), "{}", plan.height);
@@ -110,11 +115,11 @@ fn geometry__ring_holds_ten_seats_in_the_book_column() {
 fn geometry__ring_falls_back_to_ledger_below_520() {
     assert_eq!(
         Layout::Ring,
-        plan(Layout::Ring, &[true; 8], &[], None, 520).layout
+        Plan::new(Layout::Ring, &[true; 8], &[], None, 520).layout
     );
     assert_eq!(
         Layout::Ledger,
-        plan(Layout::Ring, &[true; 2], &[], None, 519).layout
+        Plan::new(Layout::Ring, &[true; 2], &[], None, 519).layout
     );
 }
 
@@ -122,13 +127,13 @@ fn geometry__ring_falls_back_to_ledger_below_520() {
 fn geometry__ring_falls_back_when_the_seats_do_not_fit() {
     assert_eq!(
         Layout::Ledger,
-        plan(Layout::Ring, &[true; 10], &[], None, 520).layout
+        Plan::new(Layout::Ring, &[true; 10], &[], None, 520).layout
     );
 }
 
 #[test]
 fn geometry__narrow_widths_draw_at_320() {
-    let plan = plan(Layout::Ledger, &[true; 4], &[], None, 200);
+    let plan = Plan::new(Layout::Ledger, &[true; 4], &[], None, 200);
 
     assert_eq!(320, plan.width);
 }

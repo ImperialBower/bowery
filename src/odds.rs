@@ -9,7 +9,7 @@
 //! percents.
 //!
 //! ```
-//! use bowery::check::check;
+//! use bowery::check::Checked;
 //! use bowery::config::{Config, View};
 //! use bowery::game::Game;
 //!
@@ -18,7 +18,7 @@
 //! table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
 //! players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
 //! ").unwrap();
-//! let game = Game::new(check(&config).unwrap()).unwrap();
+//! let game = Game::new(Checked::new(&config).unwrap()).unwrap();
 //! let frame = game.frame_with_odds(View::All);
 //! let odds = frame.odds.unwrap();
 //! assert_eq!(2, odds.percents.len());
@@ -132,7 +132,7 @@ impl Odds {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::{Config, View};
     /// use bowery::game::Game;
     /// use bowery::odds::Odds;
@@ -142,7 +142,7 @@ impl Odds {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// let frame = game.frame(View::All);
     ///
     /// // Both seats are dealt and face up, so the odds are there.

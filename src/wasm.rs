@@ -3,7 +3,7 @@
 //! The only wasm-bindgen code in the crate. Every method wraps
 //! [`crate::element::Table`] and turns its errors into JavaScript strings;
 //! a config's problems come back as the JSON of
-//! [`crate::element::problems_json`]. Each element constructs its own
+//! [`crate::element::Table::problems_json`]. Each element constructs its own
 //! table from the one shared module, and a table owns all of its state, so
 //! many tables on a page are independent.
 //!
@@ -20,7 +20,7 @@
 
 use wasm_bindgen::prelude::*;
 
-use crate::element::{Table, problems_json};
+use crate::element::Table;
 
 /// One element's table, for JavaScript.
 ///
@@ -49,7 +49,7 @@ impl BoweryTable {
     /// # Errors
     ///
     /// The config's problems as a JSON string (see
-    /// [`crate::element::problems_json`]).
+    /// [`crate::element::Table::problems_json`]).
     ///
     /// # Examples
     ///
@@ -67,7 +67,7 @@ impl BoweryTable {
     pub fn new(config_yaml: &str) -> Result<BoweryTable, JsValue> {
         Table::new(config_yaml)
             .map(|table| Self { table })
-            .map_err(|problems| JsValue::from_str(&problems_json(&problems)))
+            .map_err(|problems| JsValue::from_str(&Table::problems_json(&problems)))
     }
 
     /// The table on screen as SVG, `width` pixels wide, dark or light.
@@ -351,6 +351,6 @@ impl BoweryTable {
     /// ```
     #[must_use]
     pub fn version() -> String {
-        crate::element::version().to_string()
+        Table::version().to_string()
     }
 }

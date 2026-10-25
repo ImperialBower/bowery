@@ -61,7 +61,7 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start: Option<Moment>,
     /// Seats, button and stakes for play. Replay and interactive take the
-    /// recorded hand's own table, and [`check`](crate::check::check) refuses
+    /// recorded hand's own table, and [`Checked::new`](crate::check::Checked::new) refuses
     /// a `table` beside one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<TableSetup>,
@@ -509,17 +509,22 @@ mod tests {
 
     const HEADS_UP: &str = include_str!("../tests/hands/heads_up_all_in.yaml");
 
-    fn replay_yaml() -> String {
-        let hand: String = HEADS_UP
-            .lines()
-            .flat_map(|line| ["  ", line, "\n"])
-            .collect();
-        format!("mode: replay\nstart: flop\nhand:\n{hand}")
+    /// A replay config for the tests.
+    struct Fixture;
+
+    impl Fixture {
+        fn replay_yaml() -> String {
+            let hand: String = HEADS_UP
+                .lines()
+                .flat_map(|line| ["  ", line, "\n"])
+                .collect();
+            format!("mode: replay\nstart: flop\nhand:\n{hand}")
+        }
     }
 
     #[test]
     fn config__from_yaml_reads_a_replay() {
-        let config = Config::from_yaml(&replay_yaml()).unwrap();
+        let config = Config::from_yaml(&Fixture::replay_yaml()).unwrap();
 
         assert_eq!(Mode::Replay, config.mode);
         assert_eq!(Some(Moment::Flop), config.start);
@@ -528,7 +533,7 @@ mod tests {
 
     #[test]
     fn config__round_trips_through_yaml() {
-        let config = Config::from_yaml(&replay_yaml()).unwrap();
+        let config = Config::from_yaml(&Fixture::replay_yaml()).unwrap();
 
         let again = Config::from_yaml(&config.to_yaml().unwrap()).unwrap();
 

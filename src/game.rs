@@ -23,7 +23,7 @@
 //! settlement of its own.
 //!
 //! ```
-//! use bowery::check::check;
+//! use bowery::check::Checked;
 //! use bowery::config::Config;
 //! use bowery::game::{Advance, Event, Game};
 //!
@@ -33,7 +33,7 @@
 //! table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
 //! players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
 //! ").unwrap();
-//! let mut game = Game::new(check(&config).unwrap()).unwrap();
+//! let mut game = Game::new(Checked::new(&config).unwrap()).unwrap();
 //!
 //! assert_eq!(Event::Forced, *game.event());
 //! assert_eq!(Advance::Waiting, game.advance().unwrap()); // the reader is first to act
@@ -60,7 +60,7 @@ use rand::SeedableRng;
 use rand::rngs::SmallRng;
 use uuid::Uuid;
 
-use crate::check::{Checked, chips};
+use crate::check::Checked;
 use crate::config::{Config, Mode, View};
 use crate::frame::Frame;
 
@@ -338,7 +338,7 @@ impl Live {
 /// # Examples
 ///
 /// ```
-/// use bowery::check::check;
+/// use bowery::check::Checked;
 /// use bowery::config::Config;
 /// use bowery::game::{Advance, Game};
 ///
@@ -348,7 +348,7 @@ impl Live {
 /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
 /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
 /// ").unwrap();
-/// let mut game = Game::new(check(&config).unwrap()).unwrap();
+/// let mut game = Game::new(Checked::new(&config).unwrap()).unwrap();
 /// game.advance().unwrap();
 /// game.act(pkcore::casino::action::PlayerAction::Fold).unwrap();
 /// while game.advance().unwrap() != Advance::Ended {}
@@ -401,7 +401,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -410,12 +410,12 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(Some(0), game.reader());
     /// ```
     pub fn new(checked: Checked) -> Result<Self, GameError> {
         let config = checked.config();
-        let seed = config.seed.unwrap_or_else(|| default_seed(config));
+        let seed = config.seed.unwrap_or_else(|| Self::default_seed(config));
         let profiles = BotProfile::default_profiles();
         let bots = config
             .players
@@ -451,7 +451,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::{Config, Mode};
     /// use bowery::game::Game;
     ///
@@ -460,7 +460,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(Mode::Play, game.config().mode);
     /// ```
     #[must_use]
@@ -474,7 +474,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -483,7 +483,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(1, game.moments()); // the forced bets
     /// ```
     #[must_use]
@@ -496,7 +496,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -505,7 +505,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(0, game.at());
     /// ```
     #[must_use]
@@ -518,7 +518,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::{Event, Game};
     ///
@@ -527,7 +527,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(Event::Forced, *game.event());
     /// ```
     #[must_use]
@@ -540,7 +540,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::{Event, Game};
     ///
@@ -549,7 +549,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(Some(&Event::Forced), game.event_at(0));
     /// assert_eq!(None, game.event_at(1));
     /// ```
@@ -564,7 +564,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::{Config, View};
     /// use bowery::game::Game;
     ///
@@ -573,7 +573,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// assert_eq!(View::Seat, Game::new(check(&config).unwrap()).unwrap().view());
+    /// assert_eq!(View::Seat, Game::new(Checked::new(&config).unwrap()).unwrap().view());
     /// ```
     #[must_use]
     pub fn view(&self) -> View {
@@ -590,7 +590,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::{Config, View};
     /// use bowery::game::Game;
     ///
@@ -599,7 +599,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(3, game.frame(View::All).pot);
     /// ```
     #[must_use]
@@ -614,7 +614,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -624,7 +624,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(7, game.seed());
     /// ```
     #[must_use]
@@ -638,7 +638,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::{Config, View};
     /// use bowery::game::Game;
     ///
@@ -647,7 +647,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert!(game.frame_with_odds(View::All).odds.is_some());
     /// assert!(game.frame(View::All).odds.is_none());
     /// ```
@@ -661,7 +661,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -670,7 +670,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(3, game.table().seats.get_seat(0).unwrap().player.bet
     ///     + game.table().seats.get_seat(1).unwrap().player.bet);
     /// ```
@@ -684,7 +684,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -694,7 +694,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200, bot: gto }, { seat: 1, stack: 200 } ]
     /// ").unwrap();
-    /// assert_eq!(Some(1), Game::new(check(&config).unwrap()).unwrap().reader());
+    /// assert_eq!(Some(1), Game::new(Checked::new(&config).unwrap()).unwrap().reader());
     /// ```
     #[must_use]
     pub fn reader(&self) -> Option<u8> {
@@ -706,7 +706,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -715,7 +715,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// assert_eq!(1, Game::new(check(&config).unwrap()).unwrap().hand_number());
+    /// assert_eq!(1, Game::new(Checked::new(&config).unwrap()).unwrap().hand_number());
     /// ```
     #[must_use]
     pub fn hand_number(&self) -> u32 {
@@ -728,7 +728,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::{Advance, Game};
     /// use pkcore::casino::action::PlayerAction;
@@ -738,7 +738,7 @@ impl Game {
     /// table: { button: 0, stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let mut game = Game::new(check(&config).unwrap()).unwrap();
+    /// let mut game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert!(!game.is_hand_over());
     /// game.act(PlayerAction::Fold).unwrap();
     /// while game.advance().unwrap() != Advance::Ended {}
@@ -759,7 +759,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::{Game, RecordState};
     ///
@@ -768,7 +768,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(RecordState::NotAReplay, game.record_state());
     /// ```
     #[must_use]
@@ -794,7 +794,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -803,7 +803,7 @@ impl Game {
     /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let mut game = Game::new(check(&config).unwrap()).unwrap();
+    /// let mut game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert!(game.seek(0).is_ok());
     /// assert!(game.seek(1).is_err());
     /// ```
@@ -824,7 +824,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -833,7 +833,7 @@ impl Game {
     /// table: { button: 0, stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(Some(0), game.to_act()); // heads-up, the button acts first
     /// ```
     #[must_use]
@@ -854,7 +854,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     /// use pkcore::casino::action::PlayerAction;
@@ -864,7 +864,7 @@ impl Game {
     /// table: { button: 0, stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let game = Game::new(check(&config).unwrap()).unwrap();
+    /// let game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert!(game.legal().contains(&PlayerAction::Fold));
     /// ```
     #[must_use]
@@ -887,7 +887,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     ///
@@ -899,7 +899,7 @@ impl Game {
     ///   players: [ { seat: 0, name: A, stack: 100.0 }, { seat: 1, name: B, stack: 100.0 } ]
     ///   streets: { preflop: { actions: [ { seat: 0, action: fold } ] } }
     /// ").unwrap();
-    /// let mut game = Game::new(check(&config).unwrap()).unwrap();
+    /// let mut game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// game.take_seat(0).unwrap();
     /// assert_eq!(Some(0), game.reader());
     /// ```
@@ -929,7 +929,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::{Game, RecordState};
     /// use pkcore::casino::action::PlayerAction;
@@ -942,7 +942,7 @@ impl Game {
     ///   players: [ { seat: 0, name: A, stack: 100.0 }, { seat: 1, name: B, stack: 100.0 } ]
     ///   streets: { preflop: { actions: [ { seat: 0, action: fold } ] } }
     /// ").unwrap();
-    /// let mut game = Game::new(check(&config).unwrap()).unwrap();
+    /// let mut game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// game.take_seat(0).unwrap();
     /// game.act(PlayerAction::Call).unwrap(); // the record folds
     /// assert_eq!(RecordState::OffRecord { since: 0 }, game.record_state());
@@ -974,7 +974,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::Game;
     /// use pkcore::casino::action::PlayerAction;
@@ -984,7 +984,7 @@ impl Game {
     /// table: { button: 0, stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let mut game = Game::new(check(&config).unwrap()).unwrap();
+    /// let mut game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// game.act(PlayerAction::Fold).unwrap();
     /// assert_eq!(2, game.moments());
     /// ```
@@ -1026,7 +1026,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::{Advance, Game};
     ///
@@ -1036,7 +1036,7 @@ impl Game {
     /// table: { button: 0, stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200, bot: abc }, { seat: 1, stack: 200 } ]
     /// ").unwrap();
-    /// let mut game = Game::new(check(&config).unwrap()).unwrap();
+    /// let mut game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// assert_eq!(Advance::Moved, game.advance().unwrap()); // the bot acts first
     /// ```
     pub fn advance(&mut self) -> Result<Advance, GameError> {
@@ -1068,7 +1068,7 @@ impl Game {
                     .get(&seat)
                     .cloned()
                     .unwrap_or_else(BotProfile::gto);
-                let action = bot_act(&mut live.session, &profile, seat, &mut self.rng)?;
+                let action = Self::bot_act(&mut live.session, &profile, seat, &mut self.rng)?;
                 let step = Step {
                     event: Event::Action {
                         seat,
@@ -1081,7 +1081,7 @@ impl Game {
                 Ok(Advance::Moved)
             }
             SessionStep::StreetAdvanced => {
-                live.street = next_street(live.street);
+                live.street = Self::next_street(live.street);
                 let step = Step {
                     event: Event::Deal(live.street),
                     table: live.session.table.clone(),
@@ -1090,7 +1090,7 @@ impl Game {
                 Ok(Advance::Moved)
             }
             SessionStep::HandComplete => {
-                let ending = settle(live, self.line.len())?;
+                let ending = Self::settle(live, self.line.len())?;
                 live.pending = ending.into();
                 live.settled = true;
                 match live.pending.pop_front() {
@@ -1120,7 +1120,7 @@ impl Game {
     /// # Examples
     ///
     /// ```
-    /// use bowery::check::check;
+    /// use bowery::check::Checked;
     /// use bowery::config::Config;
     /// use bowery::game::{Advance, Game};
     /// use pkcore::casino::action::PlayerAction;
@@ -1130,7 +1130,7 @@ impl Game {
     /// table: { button: 0, stakes: { small_blind: 1.0, big_blind: 2.0 } }
     /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     /// ").unwrap();
-    /// let mut game = Game::new(check(&config).unwrap()).unwrap();
+    /// let mut game = Game::new(Checked::new(&config).unwrap()).unwrap();
     /// game.act(PlayerAction::Fold).unwrap();
     /// while game.advance().unwrap() != Advance::Ended {}
     /// game.next_hand().unwrap();
@@ -1153,10 +1153,10 @@ impl Game {
         if live.session.count_funded() < 2 {
             return Err(GameError::TableBroken);
         }
-        move_button(&mut live.session.table);
+        Self::move_button(&mut live.session.table);
         self.hand_number += 1;
         let session = &mut live.session;
-        let (base, log_from) = deal(
+        let (base, log_from) = Self::deal(
             session,
             self.hand_number,
             self.checked.config(),
@@ -1222,7 +1222,7 @@ impl Game {
             .ok_or_else(|| GameError::Setup("an interactive game has no hand".to_string()))?;
         let mut base = hand.clone();
         base.results = None;
-        let street = street_at(&self.line, since);
+        let street = Self::street_at(&self.line, since);
         let table = self.table().clone();
         let mut session = PokerSession::new(table);
         session
@@ -1292,9 +1292,10 @@ impl Game {
                 .find(|player| player.bot.is_none())
                 .map(|player| player.seat)
         });
-        let mut session = PokerSession::new(play_table(config)?);
+        let mut session = PokerSession::new(Self::play_table(config)?);
         let deck = config.deck.as_deref().map(Cards::from_str).transpose()?;
-        let (base, log_from) = deal(&mut session, self.hand_number, config, deck, &mut self.rng)?;
+        let (base, log_from) =
+            Self::deal(&mut session, self.hand_number, config, deck, &mut self.rng)?;
         self.line = vec![Step {
             event: Event::Forced,
             table: session.table.clone(),
@@ -1310,286 +1311,288 @@ impl Game {
         });
         Ok(())
     }
-}
 
-/// The seed when the config gives none: FNV-1a over the config's YAML, so a
-/// page plays the same way every time it loads.
-fn default_seed(config: &Config) -> u64 {
-    let yaml = config.to_yaml().unwrap_or_default();
-    yaml.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
-        (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
-    })
-}
-
-/// The street after `street`.
-fn next_street(street: ReplayStreet) -> ReplayStreet {
-    match street {
-        ReplayStreet::Preflop => ReplayStreet::Flop,
-        ReplayStreet::Flop => ReplayStreet::Turn,
-        ReplayStreet::Turn | ReplayStreet::River => ReplayStreet::River,
+    /// The seed when the config gives none: FNV-1a over the config's YAML, so a
+    /// page plays the same way every time it loads.
+    fn default_seed(config: &Config) -> u64 {
+        let yaml = config.to_yaml().unwrap_or_default();
+        yaml.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+            (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
+        })
     }
-}
 
-/// A bot acts for `seat`. If the engine refuses its choice, it checks, else
-/// calls, else folds.
-fn bot_act(
-    session: &mut PokerSession,
-    profile: &BotProfile,
-    seat: u8,
-    rng: &mut SmallRng,
-) -> Result<PlayerAction, GameError> {
-    let decided = profile.decide(&session.table, seat, rng);
-    let mut last = PKError::InvalidAction;
-    for action in [
-        decided,
-        PlayerAction::Check,
-        PlayerAction::Call,
-        PlayerAction::Fold,
-    ] {
-        match session.apply_action(seat, action) {
-            Ok(()) => return Ok(action),
-            Err(error) => last = error,
+    /// The street after `street`.
+    fn next_street(street: ReplayStreet) -> ReplayStreet {
+        match street {
+            ReplayStreet::Preflop => ReplayStreet::Flop,
+            ReplayStreet::Flop => ReplayStreet::Turn,
+            ReplayStreet::Turn | ReplayStreet::River => ReplayStreet::River,
         }
     }
-    Err(GameError::Engine(last))
-}
 
-/// The play table: every chair up to `table.seats`, the players in theirs,
-/// the stakes and the button.
-fn play_table(config: &Config) -> Result<Table, GameError> {
-    let setup = config.table.clone().unwrap_or_default();
-    let stakes = setup
-        .stakes
-        .as_ref()
-        .ok_or_else(|| GameError::Setup("play needs the blinds".to_string()))?;
-    let whole = |value: f64| {
-        chips(value).ok_or_else(|| GameError::Setup(format!("{value} is not whole chips")))
-    };
-    let forced = ForcedBets::new_with_ante(
-        whole(stakes.small_blind)?,
-        whole(stakes.big_blind)?,
-        whole(stakes.ante.unwrap_or(0.0))?,
-    );
-    let highest = config
-        .players
-        .iter()
-        .map(|player| player.seat)
-        .max()
-        .unwrap_or(0);
-    let chairs = setup.seats.unwrap_or(highest.saturating_add(1)).max(2);
-    let mut seats: Vec<Seat> = (0..chairs).map(|_| Seat::new(Player::default())).collect();
-    for player in &config.players {
-        let stack = usize::try_from(player.stack.unwrap_or(0))
-            .map_err(|_| GameError::Setup(format!("seat {}'s stack is too large", player.seat)))?;
-        let name = player
-            .name
-            .clone()
-            .or_else(|| player.bot.clone())
-            .unwrap_or_else(|| format!("Seat {}", player.seat));
-        let chair = seats
-            .get_mut(usize::from(player.seat))
-            .ok_or_else(|| GameError::Setup(format!("seat {} is not at the table", player.seat)))?;
-        *chair = Seat::new(Player::with_id(
-            Uuid::from_u128(u128::from(player.seat) + 1),
-            name,
-            stack,
-        ));
+    /// A bot acts for `seat`. If the engine refuses its choice, it checks, else
+    /// calls, else folds.
+    fn bot_act(
+        session: &mut PokerSession,
+        profile: &BotProfile,
+        seat: u8,
+        rng: &mut SmallRng,
+    ) -> Result<PlayerAction, GameError> {
+        let decided = profile.decide(&session.table, seat, rng);
+        let mut last = PKError::InvalidAction;
+        for action in [
+            decided,
+            PlayerAction::Check,
+            PlayerAction::Call,
+            PlayerAction::Fold,
+        ] {
+            match session.apply_action(seat, action) {
+                Ok(()) => return Ok(action),
+                Err(error) => last = error,
+            }
+        }
+        Err(GameError::Engine(last))
     }
-    let mut table =
-        Table::nlh_from_seats_with_id(Seats::new(seats), forced, Uuid::from_u128(0xB0E5));
-    table.button = setup.button.unwrap_or(0);
-    Ok(table)
-}
 
-/// Deals a play hand: from `deck` if given, else from a shuffle on `rng`.
-/// Returns the hand history the end of the hand is rebuilt from (players,
-/// table, stakes; no streets) and where the hand starts in the event log.
-fn deal(
-    session: &mut PokerSession,
-    hand_number: u32,
-    config: &Config,
-    deck: Option<Cards>,
-    rng: &mut SmallRng,
-) -> Result<(HandHistory, usize), GameError> {
-    let starting: Vec<(u8, String, usize)> = seated(&session.table)
-        .map(|(seat, chair)| (seat, chair.player.handle.clone(), chair.player.chips))
-        .collect();
-    let log_from = session.table.event_log.len();
-    match deck {
-        Some(deck) => session.start_hand_with_deck(deck)?,
-        None => session.start_hand_with(rng)?,
+    /// The play table: every chair up to `table.seats`, the players in theirs,
+    /// the stakes and the button.
+    fn play_table(config: &Config) -> Result<Table, GameError> {
+        let setup = config.table.clone().unwrap_or_default();
+        let stakes = setup
+            .stakes
+            .as_ref()
+            .ok_or_else(|| GameError::Setup("play needs the blinds".to_string()))?;
+        let whole = |value: f64| {
+            Checked::chips(value)
+                .ok_or_else(|| GameError::Setup(format!("{value} is not whole chips")))
+        };
+        let forced = ForcedBets::new_with_ante(
+            whole(stakes.small_blind)?,
+            whole(stakes.big_blind)?,
+            whole(stakes.ante.unwrap_or(0.0))?,
+        );
+        let highest = config
+            .players
+            .iter()
+            .map(|player| player.seat)
+            .max()
+            .unwrap_or(0);
+        let chairs = setup.seats.unwrap_or(highest.saturating_add(1)).max(2);
+        let mut seats: Vec<Seat> = (0..chairs).map(|_| Seat::new(Player::default())).collect();
+        for player in &config.players {
+            let stack = usize::try_from(player.stack.unwrap_or(0)).map_err(|_| {
+                GameError::Setup(format!("seat {}'s stack is too large", player.seat))
+            })?;
+            let name = player
+                .name
+                .clone()
+                .or_else(|| player.bot.clone())
+                .unwrap_or_else(|| format!("Seat {}", player.seat));
+            let chair = seats.get_mut(usize::from(player.seat)).ok_or_else(|| {
+                GameError::Setup(format!("seat {} is not at the table", player.seat))
+            })?;
+            *chair = Seat::new(Player::with_id(
+                Uuid::from_u128(u128::from(player.seat) + 1),
+                name,
+                stack,
+            ));
+        }
+        let mut table =
+            Table::nlh_from_seats_with_id(Seats::new(seats), forced, Uuid::from_u128(0xB0E5));
+        table.button = setup.button.unwrap_or(0);
+        Ok(table)
     }
-    let table = &session.table;
-    let players = starting
-        .into_iter()
-        .map(|(seat, name, stack)| PlayerEntry {
-            seat,
-            name,
-            stack: amount(stack),
-            player_id: None,
-            hole_cards: table
+
+    /// Deals a play hand: from `deck` if given, else from a shuffle on `rng`.
+    /// Returns the hand history the end of the hand is rebuilt from (players,
+    /// table, stakes; no streets) and where the hand starts in the event log.
+    fn deal(
+        session: &mut PokerSession,
+        hand_number: u32,
+        config: &Config,
+        deck: Option<Cards>,
+        rng: &mut SmallRng,
+    ) -> Result<(HandHistory, usize), GameError> {
+        let starting: Vec<(u8, String, usize)> = Self::seated(&session.table)
+            .map(|(seat, chair)| (seat, chair.player.handle.clone(), chair.player.chips))
+            .collect();
+        let log_from = session.table.event_log.len();
+        match deck {
+            Some(deck) => session.start_hand_with_deck(deck)?,
+            None => session.start_hand_with(rng)?,
+        }
+        let table = &session.table;
+        let players = starting
+            .into_iter()
+            .map(|(seat, name, stack)| PlayerEntry {
+                seat,
+                name,
+                stack: Self::amount(stack),
+                player_id: None,
+                hole_cards: table
+                    .seats
+                    .get_seat(seat)
+                    .map(|chair| chair.cards.to_string()),
+                posted: None,
+                hole_cards_visibility: None,
+                withdrawn: None,
+            })
+            .collect();
+        let stakes = config
+            .table
+            .as_ref()
+            .and_then(|setup| setup.stakes.clone())
+            .unwrap_or(Stakes {
+                small_blind: Self::amount(table.forced.small_blind),
+                big_blind: Self::amount(table.forced.big_blind),
+                ante: None,
+                straddle: None,
+                bring_in: None,
+            });
+        let base = HandHistory {
+            pkcore_version: None,
+            format_version: 1,
+            hand: HandMeta {
+                id: format!("bowery-play-{hand_number}"),
+                game: HandVariant::Holdem,
+                timestamp: None,
+                source: Some("bowery play".to_string()),
+                description: None,
+            },
+            table: TableInfo {
+                name: None,
+                seats: Some(table.seats.size()),
+                button: Some(table.button),
+                stakes,
+                betting_structure: table.betting,
+            },
+            players,
+            board: None,
+            streets: None,
+            results: None,
+            analysis: None,
+            shuffled_deck: None,
+        };
+        Ok((base, log_from))
+    }
+
+    /// The occupied seats of `table`, with their numbers.
+    fn seated(table: &Table) -> impl Iterator<Item = (u8, &Seat)> {
+        (0..=u8::MAX)
+            .map_while(|seat| table.seats.get_seat(seat).map(|chair| (seat, chair)))
+            .filter(|(_, chair)| !chair.is_empty())
+    }
+
+    /// Chips as a hand-history amount.
+    #[allow(
+        clippy::cast_precision_loss,
+        reason = "chip counts are far below 2^52, where f64 stops being exact"
+    )]
+    fn amount(chips: usize) -> f64 {
+        chips as f64
+    }
+
+    /// Moves the button to the next occupied chair.
+    fn move_button(table: &mut Table) {
+        for _ in 0..table.seats.size() {
+            table.button_up();
+            if table
                 .seats
-                .get_seat(seat)
-                .map(|chair| chair.cards.to_string()),
-            posted: None,
-            hole_cards_visibility: None,
-            withdrawn: None,
-        })
-        .collect();
-    let stakes = config
-        .table
-        .as_ref()
-        .and_then(|setup| setup.stakes.clone())
-        .unwrap_or(Stakes {
-            small_blind: amount(table.forced.small_blind),
-            big_blind: amount(table.forced.big_blind),
-            ante: None,
-            straddle: None,
-            bring_in: None,
-        });
-    let base = HandHistory {
-        pkcore_version: None,
-        format_version: 1,
-        hand: HandMeta {
-            id: format!("bowery-play-{hand_number}"),
-            game: HandVariant::Holdem,
-            timestamp: None,
-            source: Some("bowery play".to_string()),
-            description: None,
-        },
-        table: TableInfo {
-            name: None,
-            seats: Some(table.seats.size()),
-            button: Some(table.button),
-            stakes,
-            betting_structure: table.betting,
-        },
-        players,
-        board: None,
-        streets: None,
-        results: None,
-        analysis: None,
-        shuffled_deck: None,
-    };
-    Ok((base, log_from))
-}
-
-/// The occupied seats of `table`, with their numbers.
-fn seated(table: &Table) -> impl Iterator<Item = (u8, &Seat)> {
-    (0..=u8::MAX)
-        .map_while(|seat| table.seats.get_seat(seat).map(|chair| (seat, chair)))
-        .filter(|(_, chair)| !chair.is_empty())
-}
-
-/// Chips as a hand-history amount.
-#[allow(
-    clippy::cast_precision_loss,
-    reason = "chip counts are far below 2^52, where f64 stops being exact"
-)]
-fn amount(chips: usize) -> f64 {
-    chips as f64
-}
-
-/// Moves the button to the next occupied chair.
-fn move_button(table: &mut Table) {
-    for _ in 0..table.seats.size() {
-        table.button_up();
-        if table
-            .seats
-            .get_seat(table.button)
-            .is_some_and(|chair| !chair.is_empty())
-        {
-            return;
+                .get_seat(table.button)
+                .is_some_and(|chair| !chair.is_empty())
+            {
+                return;
+            }
         }
     }
-}
 
-/// The street being bet at moment `index` of `line`: the last street dealt
-/// by then, or the preflop.
-fn street_at(line: &[Step], index: usize) -> ReplayStreet {
-    line.iter()
-        .take(index + 1)
-        .rev()
-        .find_map(|step| match step.event {
-            Event::Deal(street) => Some(street),
-            _ => None,
-        })
-        .unwrap_or(ReplayStreet::Preflop)
-}
+    /// The street being bet at moment `index` of `line`: the last street dealt
+    /// by then, or the preflop.
+    fn street_at(line: &[Step], index: usize) -> ReplayStreet {
+        line.iter()
+            .take(index + 1)
+            .rev()
+            .find_map(|step| match step.event {
+                Event::Deal(street) => Some(street),
+                _ => None,
+            })
+            .unwrap_or(ReplayStreet::Preflop)
+    }
 
-/// The hand's last moments: the hand is rebuilt as a hand history (the base,
-/// with the streets the table logged since `log_from`) and pkcore's cursor
-/// names the return, showdown and awards. `played` is the number of moments
-/// so far, which the rebuilt hand must have before its last ones.
-///
-/// Off the record the whole log is read: since pkcore 0.17.3 a replayed
-/// table logs the streets the record laid (`DEFECT_041`), so the log holds
-/// the record up to the takeover and the engine's play after it.
-fn settle(live: &Live, played: usize) -> Result<Vec<Step>, GameError> {
-    let log = live
-        .session
-        .table
-        .event_log
-        .get(live.log_from..)
-        .unwrap_or_default();
-    let mut streets = Streets::from_event_log(log).unwrap_or_default();
-    // The log holds a flop as a set, which loses the deal order; the table's
-    // board keeps it, so the rebuilt flop reads the same as the moments before.
-    if let Some(flop) = streets.flop.as_mut() {
-        let dealt: Vec<String> = live
+    /// The hand's last moments: the hand is rebuilt as a hand history (the base,
+    /// with the streets the table logged since `log_from`) and pkcore's cursor
+    /// names the return, showdown and awards. `played` is the number of moments
+    /// so far, which the rebuilt hand must have before its last ones.
+    ///
+    /// Off the record the whole log is read: since pkcore 0.17.3 a replayed
+    /// table logs the streets the record laid (`DEFECT_041`), so the log holds
+    /// the record up to the takeover and the engine's play after it.
+    fn settle(live: &Live, played: usize) -> Result<Vec<Step>, GameError> {
+        let log = live
             .session
             .table
-            .board
-            .iter()
-            .take(3)
-            .map(ToString::to_string)
-            .collect();
-        flop.cards = dealt.join(" ");
-    }
-    let mut hand = live.base.clone();
-    hand.streets = Some(streets);
-    // The streets hold every dealt card; the record's `board` may be shorter
-    // than the hand played off it.
-    hand.board = None;
-    let findings = hand.validate();
-    if !findings.is_empty() {
-        let found: Vec<String> = findings.iter().map(ToString::to_string).collect();
-        return Err(GameError::Setup(format!(
-            "the hand off the record does not replay: {}",
-            found.join("; ")
-        )));
-    }
-    let mut replay = hand.cursor()?;
-    let events: Vec<ReplayEvent> = (0..replay.len())
-        .filter_map(|index| replay.event(index).cloned())
-        .collect();
-    let first_last = events.len()
-        - events
-            .iter()
-            .rev()
-            .take_while(|event| {
-                Event::from_replay(event).is_some_and(|event| event.ends_the_hand())
-            })
-            .count();
-    if first_last != played {
-        return Err(GameError::Setup(format!(
-            "the rebuilt hand has {first_last} moments before its end; the game played {played}"
-        )));
-    }
-    let mut ending = Vec::with_capacity(events.len() - first_last);
-    for (index, replay_event) in events.iter().enumerate().skip(1) {
-        replay.step()?;
-        if index >= first_last {
-            let event = Event::from_replay(replay_event).ok_or_else(|| {
-                GameError::Setup(format!("unknown replay event `{replay_event}`"))
-            })?;
-            ending.push(Step {
-                event,
-                table: replay.table().clone(),
-            });
+            .event_log
+            .get(live.log_from..)
+            .unwrap_or_default();
+        let mut streets = Streets::from_event_log(log).unwrap_or_default();
+        // The log holds a flop as a set, which loses the deal order; the table's
+        // board keeps it, so the rebuilt flop reads the same as the moments before.
+        if let Some(flop) = streets.flop.as_mut() {
+            let dealt: Vec<String> = live
+                .session
+                .table
+                .board
+                .iter()
+                .take(3)
+                .map(ToString::to_string)
+                .collect();
+            flop.cards = dealt.join(" ");
         }
+        let mut hand = live.base.clone();
+        hand.streets = Some(streets);
+        // The streets hold every dealt card; the record's `board` may be shorter
+        // than the hand played off it.
+        hand.board = None;
+        let findings = hand.validate();
+        if !findings.is_empty() {
+            let found: Vec<String> = findings.iter().map(ToString::to_string).collect();
+            return Err(GameError::Setup(format!(
+                "the hand off the record does not replay: {}",
+                found.join("; ")
+            )));
+        }
+        let mut replay = hand.cursor()?;
+        let events: Vec<ReplayEvent> = (0..replay.len())
+            .filter_map(|index| replay.event(index).cloned())
+            .collect();
+        let first_last = events.len()
+            - events
+                .iter()
+                .rev()
+                .take_while(|event| {
+                    Event::from_replay(event).is_some_and(|event| event.ends_the_hand())
+                })
+                .count();
+        if first_last != played {
+            return Err(GameError::Setup(format!(
+                "the rebuilt hand has {first_last} moments before its end; the game played {played}"
+            )));
+        }
+        let mut ending = Vec::with_capacity(events.len() - first_last);
+        for (index, replay_event) in events.iter().enumerate().skip(1) {
+            replay.step()?;
+            if index >= first_last {
+                let event = Event::from_replay(replay_event).ok_or_else(|| {
+                    GameError::Setup(format!("unknown replay event `{replay_event}`"))
+                })?;
+                ending.push(Step {
+                    event,
+                    table: replay.table().clone(),
+                });
+            }
+        }
+        Ok(ending)
     }
-    Ok(ending)
 }
 
 #[cfg(test)]
@@ -1636,8 +1639,8 @@ mod tests {
 
     #[test]
     fn next_street__stops_at_the_river() {
-        assert_eq!(ReplayStreet::Flop, next_street(ReplayStreet::Preflop));
-        assert_eq!(ReplayStreet::River, next_street(ReplayStreet::River));
+        assert_eq!(ReplayStreet::Flop, Game::next_street(ReplayStreet::Preflop));
+        assert_eq!(ReplayStreet::River, Game::next_street(ReplayStreet::River));
     }
 
     #[test]
@@ -1656,10 +1659,13 @@ mod tests {
     fn default_seed__is_stable() {
         let config = Config::from_yaml("mode: play\n").unwrap();
 
-        assert_eq!(default_seed(&config), default_seed(&config.clone()));
+        assert_eq!(
+            Game::default_seed(&config),
+            Game::default_seed(&config.clone())
+        );
         assert_ne!(
-            default_seed(&config),
-            default_seed(&Config::from_yaml("mode: replay\n").unwrap())
+            Game::default_seed(&config),
+            Game::default_seed(&Config::from_yaml("mode: replay\n").unwrap())
         );
     }
 
@@ -1670,7 +1676,7 @@ mod tests {
                 "mode: play\n{extra}table: {{ stakes: {{ small_blind: 1.0, big_blind: 2.0 }} }}\nplayers: [ {{ seat: 0, stack: 200 }}, {{ seat: 1, stack: 200, bot: abc }} ]\n"
             ))
             .unwrap();
-            Game::new(crate::check::check(&config).unwrap()).unwrap()
+            Game::new(crate::check::Checked::new(&config).unwrap()).unwrap()
         };
 
         assert_eq!(

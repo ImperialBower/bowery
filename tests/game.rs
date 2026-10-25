@@ -3,7 +3,7 @@
 
 use std::fs;
 
-use bowery::check::check;
+use bowery::check::Checked;
 use bowery::config::Config;
 use bowery::game::{Advance, Event, Game, GameError, RecordState};
 use pkcore::cards::Cards;
@@ -14,62 +14,68 @@ use pkcore::hand_history::{HandHistory, ReplayStreet};
 const NEGREANU: u8 = 4;
 const HANSEN: u8 = 3;
 
-fn game(config: &Config) -> Game {
-    Game::new(check(config).unwrap()).unwrap()
-}
+/// Games, configs and the reader's moves for the tests.
+struct Fixture;
 
-/// The config in `head` with the hand history at `hand_path` as its `hand`.
-fn with_hand(head: &str, hand_path: &str) -> Config {
-    let mut config = Config::from_yaml(head).unwrap();
-    config.hand = Some(HandHistory::from_yaml(&fs::read_to_string(hand_path).unwrap()).unwrap());
-    config
-}
-
-fn the_hand(head: &str) -> Game {
-    game(&with_hand(head, "fixtures/the_hand.yaml"))
-}
-
-fn play(yaml: &str) -> Game {
-    game(&Config::from_yaml(yaml).unwrap())
-}
-
-/// The reader's simplest line: check when it can, call when it must.
-fn check_or_call(game: &Game) -> PlayerAction {
-    if game.legal().contains(&PlayerAction::Check) {
-        PlayerAction::Check
-    } else {
-        PlayerAction::Call
+impl Fixture {
+    fn game(config: &Config) -> Game {
+        Game::new(Checked::new(config).unwrap()).unwrap()
     }
-}
 
-/// Advances to the end of the hand, acting `reader` whenever it is the
-/// reader's turn.
-fn finish(game: &mut Game, reader: fn(&Game) -> PlayerAction) {
-    for _ in 0..500 {
-        match game.advance().unwrap() {
-            Advance::Moved => {}
-            Advance::Waiting => game.act(reader(game)).unwrap(),
-            Advance::Ended => return,
+    /// The config in `head` with the hand history at `hand_path` as its `hand`.
+    fn with_hand(head: &str, hand_path: &str) -> Config {
+        let mut config = Config::from_yaml(head).unwrap();
+        config.hand =
+            Some(HandHistory::from_yaml(&fs::read_to_string(hand_path).unwrap()).unwrap());
+        config
+    }
+
+    fn the_hand(head: &str) -> Game {
+        Self::game(&Self::with_hand(head, "fixtures/the_hand.yaml"))
+    }
+
+    fn play(yaml: &str) -> Game {
+        Self::game(&Config::from_yaml(yaml).unwrap())
+    }
+
+    /// The reader's simplest line: check when it can, call when it must.
+    fn check_or_call(game: &Game) -> PlayerAction {
+        if game.legal().contains(&PlayerAction::Check) {
+            PlayerAction::Check
+        } else {
+            PlayerAction::Call
         }
     }
-    panic!("the hand did not end in 500 steps");
-}
 
-/// Every moment of the game, from the first.
-fn moments(game: &mut Game) -> Vec<(Event, Table)> {
-    (0..game.moments())
-        .map(|index| {
-            game.seek(index).unwrap();
-            (game.event().clone(), game.table().clone())
-        })
-        .collect()
+    /// Advances to the end of the hand, acting `reader` whenever it is the
+    /// reader's turn.
+    fn finish(game: &mut Game, reader: fn(&Game) -> PlayerAction) {
+        for _ in 0..500 {
+            match game.advance().unwrap() {
+                Advance::Moved => {}
+                Advance::Waiting => game.act(reader(game)).unwrap(),
+                Advance::Ended => return,
+            }
+        }
+        panic!("the hand did not end in 500 steps");
+    }
+
+    /// Every moment of the game, from the first.
+    fn moments(game: &mut Game) -> Vec<(Event, Table)> {
+        (0..game.moments())
+            .map(|index| {
+                game.seek(index).unwrap();
+                (game.event().clone(), game.table().clone())
+            })
+            .collect()
+    }
 }
 
 // ── Replay ─────────────────────────────────────────────────────────────────
 
 #[test]
 fn game__replay_frames_are_cursor_events() {
-    let mut game = the_hand("mode: replay\n");
+    let mut game = Fixture::the_hand("mode: replay\n");
     let hand =
         HandHistory::from_yaml(&fs::read_to_string("fixtures/the_hand.yaml").unwrap()).unwrap();
     let mut replay = hand.cursor().unwrap();
@@ -89,7 +95,7 @@ fn game__replay_frames_are_cursor_events() {
 
 #[test]
 fn game__replay_opens_at_start() {
-    let game = the_hand("mode: replay\nstart: flop\n");
+    let game = Fixture::the_hand("mode: replay\nstart: flop\n");
 
     assert_eq!(Event::Deal(ReplayStreet::Flop), *game.event());
     assert_eq!(10, game.at());
@@ -97,7 +103,7 @@ fn game__replay_opens_at_start() {
 
 #[test]
 fn game__replay_advance_moves_then_ends() {
-    let mut game = the_hand("mode: replay\nstart: 23\n");
+    let mut game = Fixture::the_hand("mode: replay\nstart: 23\n");
 
     assert_eq!(Advance::Moved, game.advance().unwrap());
     assert_eq!(24, game.at());
@@ -107,14 +113,14 @@ fn game__replay_advance_moves_then_ends() {
 
 #[test]
 fn game__replay_cannot_take_a_seat() {
-    let mut game = the_hand("mode: replay\nstart: flop\n");
+    let mut game = Fixture::the_hand("mode: replay\nstart: flop\n");
 
     assert_eq!(Err(GameError::NotInteractive), game.take_seat(NEGREANU));
 }
 
 #[test]
 fn game__seek_out_of_range() {
-    let mut game = the_hand("mode: replay\n");
+    let mut game = Fixture::the_hand("mode: replay\n");
 
     assert_eq!(
         Err(GameError::OutOfRange {
@@ -127,7 +133,7 @@ fn game__seek_out_of_range() {
 
 #[test]
 fn game__replay_has_no_one_to_act_for_the_reader() {
-    let game = the_hand("mode: replay\nstart: flop\n");
+    let game = Fixture::the_hand("mode: replay\nstart: flop\n");
 
     assert_eq!(Some(HANSEN), game.to_act());
     assert_eq!(Vec::<PlayerAction>::new(), game.legal());
@@ -137,7 +143,7 @@ fn game__replay_has_no_one_to_act_for_the_reader() {
 
 #[test]
 fn game__take_seat_on_record_then_off() {
-    let mut game = the_hand("mode: interactive\nstart: flop\n");
+    let mut game = Fixture::the_hand("mode: interactive\nstart: flop\n");
     game.take_seat(NEGREANU).unwrap();
 
     assert_eq!(Advance::Moved, game.advance().unwrap()); // Hansen checks, on the record
@@ -166,7 +172,7 @@ fn game__take_seat_on_record_then_off() {
 
 #[test]
 fn game__matching_action_stays_on_record() {
-    let mut game = the_hand("mode: interactive\nstart: flop\n");
+    let mut game = Fixture::the_hand("mode: interactive\nstart: flop\n");
     game.take_seat(NEGREANU).unwrap();
     game.advance().unwrap();
 
@@ -178,10 +184,10 @@ fn game__matching_action_stays_on_record() {
 
 #[test]
 fn game__takeover_board_is_the_real_board() {
-    let mut game = the_hand("mode: interactive\nstart: flop\n");
+    let mut game = Fixture::the_hand("mode: interactive\nstart: flop\n");
     game.take_seat(NEGREANU).unwrap();
 
-    finish(&mut game, check_or_call);
+    Fixture::finish(&mut game, Fixture::check_or_call);
 
     assert!(matches!(game.record_state(), RecordState::OffRecord { .. }));
     assert_eq!("9♣ 6♦ 5♥ 5♠ 8♠", game.table().board.to_string());
@@ -189,7 +195,7 @@ fn game__takeover_board_is_the_real_board() {
 
 #[test]
 fn game__back_to_record_returns_to_takeover() {
-    let mut game = the_hand("mode: interactive\nstart: flop\n");
+    let mut game = Fixture::the_hand("mode: interactive\nstart: flop\n");
     game.take_seat(NEGREANU).unwrap();
     game.advance().unwrap();
     game.advance().unwrap();
@@ -204,21 +210,21 @@ fn game__back_to_record_returns_to_takeover() {
 
 #[test]
 fn game__take_seat_refuses_a_folded_seat() {
-    let mut game = the_hand("mode: interactive\nstart: flop\n");
+    let mut game = Fixture::the_hand("mode: interactive\nstart: flop\n");
 
     assert_eq!(Err(GameError::SeatNotLive { seat: 0 }), game.take_seat(0));
 }
 
 #[test]
 fn game__take_seat_refuses_after_the_hand() {
-    let mut game = the_hand("mode: interactive\nstart: 24\n");
+    let mut game = Fixture::the_hand("mode: interactive\nstart: 24\n");
 
     assert_eq!(Err(GameError::HandIsOver), game.take_seat(HANSEN));
 }
 
 #[test]
 fn game__act_out_of_turn_is_refused() {
-    let mut game = the_hand("mode: interactive\nstart: flop\n");
+    let mut game = Fixture::the_hand("mode: interactive\nstart: flop\n");
     game.take_seat(NEGREANU).unwrap();
 
     assert_eq!(Err(GameError::NotYourTurn), game.act(PlayerAction::Check));
@@ -239,7 +245,7 @@ const DECK: &str = "A♠ K♠ A♥ K♥ Q♠ J♠ T♠ 9♠ 8♠ 7♠ 6♠ 5♠ 
 
 #[test]
 fn game__play_first_hand_from_deck() {
-    let game = play(&format!("{HEADS_UP_PLAY}deck: {DECK}\n"));
+    let game = Fixture::play(&format!("{HEADS_UP_PLAY}deck: {DECK}\n"));
 
     assert_eq!(Event::Forced, *game.event());
     assert_eq!(RecordState::NotAReplay, game.record_state());
@@ -263,7 +269,7 @@ fn game__play_first_hand_from_deck() {
 
 #[test]
 fn game__play_waits_for_the_reader() {
-    let mut game = play(HEADS_UP_PLAY);
+    let mut game = Fixture::play(HEADS_UP_PLAY);
 
     assert_eq!(Advance::Waiting, game.advance().unwrap());
     assert_eq!(Some(0), game.to_act());
@@ -272,14 +278,14 @@ fn game__play_waits_for_the_reader() {
 
 #[test]
 fn game__play_is_the_same_twice() {
-    let mut first = play(HEADS_UP_PLAY);
-    let mut second = play(HEADS_UP_PLAY);
+    let mut first = Fixture::play(HEADS_UP_PLAY);
+    let mut second = Fixture::play(HEADS_UP_PLAY);
 
-    finish(&mut first, check_or_call);
-    finish(&mut second, check_or_call);
+    Fixture::finish(&mut first, Fixture::check_or_call);
+    Fixture::finish(&mut second, Fixture::check_or_call);
 
     let events = |game: &mut Game| {
-        moments(game)
+        Fixture::moments(game)
             .into_iter()
             .map(|(event, _)| event)
             .collect::<Vec<_>>()
@@ -290,15 +296,15 @@ fn game__play_is_the_same_twice() {
 
 #[test]
 fn game__next_hand_before_the_end_is_refused() {
-    let mut game = play(HEADS_UP_PLAY);
+    let mut game = Fixture::play(HEADS_UP_PLAY);
 
     assert_eq!(Err(GameError::HandNotOver), game.next_hand());
 }
 
 #[test]
 fn game__next_hand_moves_the_button_and_carries_stacks() {
-    let mut game = play(HEADS_UP_PLAY);
-    finish(&mut game, |_| PlayerAction::Fold);
+    let mut game = Fixture::play(HEADS_UP_PLAY);
+    Fixture::finish(&mut game, |_| PlayerAction::Fold);
     let after: Vec<usize> = (0..2)
         .map(|seat| game.table().seats.get_seat(seat).unwrap().player.chips)
         .collect();
@@ -317,36 +323,38 @@ fn game__next_hand_moves_the_button_and_carries_stacks() {
     assert_eq!(vec![950, 1050], vec![committed(0), committed(1)]);
 }
 
-/// Heads-up for 2 chips each at 1/2: the big blind is all in from the post,
-/// the reader calls, and the aces take every chip, so the table is broken.
-fn broken_table() -> Game {
-    let front = [
-        "A♠", "7♦", "A♥", "2♣", "K♥", "Q♦", "9♣", "5♠", "3♥", "8♦", "4♣", "J♥",
-    ];
-    let rest: Vec<String> = Cards::deck()
-        .to_string()
-        .split_whitespace()
-        .filter(|card| !front.contains(card))
-        .map(str::to_string)
-        .collect();
-    let deck = format!("{} {}", front.join(" "), rest.join(" "));
-    let mut game = play(&format!(
-        "mode: play\nseat: 0\n\
+impl Fixture {
+    /// Heads-up for 2 chips each at 1/2: the big blind is all in from the post,
+    /// the reader calls, and the aces take every chip, so the table is broken.
+    fn broken_table() -> Game {
+        let front = [
+            "A♠", "7♦", "A♥", "2♣", "K♥", "Q♦", "9♣", "5♠", "3♥", "8♦", "4♣", "J♥",
+        ];
+        let rest: Vec<String> = Cards::deck()
+            .to_string()
+            .split_whitespace()
+            .filter(|card| !front.contains(card))
+            .map(str::to_string)
+            .collect();
+        let deck = format!("{} {}", front.join(" "), rest.join(" "));
+        let mut game = Self::play(&format!(
+            "mode: play\nseat: 0\n\
          table: {{ seats: 2, button: 0, stakes: {{ small_blind: 1.0, big_blind: 2.0 }} }}\n\
          players:\n  - {{ seat: 0, stack: 2 }}\n  - {{ seat: 1, stack: 2, bot: abc }}\n\
          deck: {deck}\n"
-    ));
-    finish(&mut game, check_or_call);
-    let stacks: Vec<usize> = (0..2)
-        .map(|seat| game.table().seats.get_seat(seat).unwrap().player.chips)
-        .collect();
-    assert!(stacks.contains(&0), "nobody busted: {stacks:?}");
-    game
+        ));
+        Self::finish(&mut game, Self::check_or_call);
+        let stacks: Vec<usize> = (0..2)
+            .map(|seat| game.table().seats.get_seat(seat).unwrap().player.chips)
+            .collect();
+        assert!(stacks.contains(&0), "nobody busted: {stacks:?}");
+        game
+    }
 }
 
 #[test]
 fn game__next_hand_on_a_broken_table_changes_nothing() {
-    let mut game = broken_table();
+    let mut game = Fixture::broken_table();
     let before = (
         game.table().clone(),
         game.moments(),
@@ -369,45 +377,47 @@ fn game__next_hand_on_a_broken_table_changes_nothing() {
 
 #[test]
 fn game__next_hand_only_in_play() {
-    let mut game = the_hand("mode: replay\nstart: 24\n");
+    let mut game = Fixture::the_hand("mode: replay\nstart: 24\n");
 
     assert_eq!(Err(GameError::NotPlay), game.next_hand());
 }
 
 // ── The end of a hand: D1–D5, on and off the record ───────────────────────
 
-/// Heads-up, both all in preflop, the short stack wins: every moment, on the
-/// record (a replay) and off it (the short stack calls where the record
-/// says all in, so the run-out is the game's own).
-fn all_in_lines() -> Vec<(&'static str, Vec<(Event, Table)>)> {
-    let mut on = game(&with_hand(
-        "mode: replay\n",
-        "tests/hands/heads_up_all_in.yaml",
-    ));
-    let mut off = game(&with_hand(
-        "mode: interactive\nstart: 1\n",
-        "tests/hands/heads_up_all_in.yaml",
-    ));
-    off.take_seat(1).unwrap();
-    assert_eq!(Advance::Waiting, off.advance().unwrap());
-    off.act(PlayerAction::Call).unwrap();
-    assert!(matches!(off.record_state(), RecordState::OffRecord { .. }));
-    finish(&mut off, check_or_call);
-    vec![
-        ("on the record", moments(&mut on)),
-        ("off the record", moments(&mut off)),
-    ]
-}
+impl Fixture {
+    /// Heads-up, both all in preflop, the short stack wins: every moment, on the
+    /// record (a replay) and off it (the short stack calls where the record
+    /// says all in, so the run-out is the game's own).
+    fn all_in_lines() -> Vec<(&'static str, Vec<(Event, Table)>)> {
+        let mut on = Self::game(&Self::with_hand(
+            "mode: replay\n",
+            "tests/hands/heads_up_all_in.yaml",
+        ));
+        let mut off = Self::game(&Self::with_hand(
+            "mode: interactive\nstart: 1\n",
+            "tests/hands/heads_up_all_in.yaml",
+        ));
+        off.take_seat(1).unwrap();
+        assert_eq!(Advance::Waiting, off.advance().unwrap());
+        off.act(PlayerAction::Call).unwrap();
+        assert!(matches!(off.record_state(), RecordState::OffRecord { .. }));
+        Self::finish(&mut off, Self::check_or_call);
+        vec![
+            ("on the record", Self::moments(&mut on)),
+            ("off the record", Self::moments(&mut off)),
+        ]
+    }
 
-fn bets(table: &Table) -> usize {
-    (0..2)
-        .map(|seat| table.seats.get_seat(seat).unwrap().player.bet)
-        .sum()
+    fn bets(table: &Table) -> usize {
+        (0..2)
+            .map(|seat| table.seats.get_seat(seat).unwrap().player.bet)
+            .sum()
+    }
 }
 
 #[test]
 fn game__d1_every_street_is_its_own_frame() {
-    for (line, moments) in all_in_lines() {
+    for (line, moments) in Fixture::all_in_lines() {
         let deals: Vec<(ReplayStreet, usize)> = moments
             .iter()
             .filter_map(|(event, table)| match event {
@@ -429,7 +439,7 @@ fn game__d1_every_street_is_its_own_frame() {
 
 #[test]
 fn game__d2_cards_are_up_at_showdown() {
-    for (line, moments) in all_in_lines() {
+    for (line, moments) in Fixture::all_in_lines() {
         let (_, table) = moments
             .iter()
             .find(|(event, _)| *event == Event::Showdown)
@@ -449,7 +459,7 @@ fn game__d2_cards_are_up_at_showdown() {
 
 #[test]
 fn game__d3_the_award_is_the_pot() {
-    for (line, moments) in all_in_lines() {
+    for (line, moments) in Fixture::all_in_lines() {
         let (_, showdown) = moments
             .iter()
             .find(|(event, _)| *event == Event::Showdown)
@@ -461,18 +471,18 @@ fn game__d3_the_award_is_the_pot() {
                 _ => None,
             })
             .sum();
-        assert_eq!(showdown.pot + bets(showdown), awarded, "{line}");
+        assert_eq!(showdown.pot + Fixture::bets(showdown), awarded, "{line}");
         assert_eq!(400, awarded, "{line}");
     }
 }
 
 #[test]
 fn game__d4_no_bets_or_pot_after_the_award() {
-    for (line, moments) in all_in_lines() {
+    for (line, moments) in Fixture::all_in_lines() {
         let (event, last) = moments.last().unwrap();
         assert!(matches!(event, Event::Award { .. }), "{line}: {event:?}");
         assert_eq!(0, last.pot, "{line}");
-        assert_eq!(0, bets(last), "{line}");
+        assert_eq!(0, Fixture::bets(last), "{line}");
         let stacks: Vec<usize> = (0..2)
             .map(|seat| last.seats.get_seat(seat).unwrap().player.chips)
             .collect();
@@ -482,7 +492,7 @@ fn game__d4_no_bets_or_pot_after_the_award() {
 
 #[test]
 fn game__d5_nobody_to_act_after_the_hand() {
-    let mut game = game(&with_hand(
+    let mut game = Fixture::game(&Fixture::with_hand(
         "mode: interactive\n",
         "tests/hands/heads_up_all_in.yaml",
     ));
@@ -495,7 +505,7 @@ fn game__d5_nobody_to_act_after_the_hand() {
 
 #[test]
 fn game__return_is_not_a_win() {
-    for (line, moments) in all_in_lines() {
+    for (line, moments) in Fixture::all_in_lines() {
         let events: Vec<&Event> = moments.iter().map(|(event, _)| event).collect();
         assert!(
             events.contains(&&Event::Return {
@@ -515,11 +525,11 @@ fn game__return_is_not_a_win() {
 
 #[test]
 fn game__second_hand_plays_to_the_end() {
-    let mut game = play(HEADS_UP_PLAY);
-    finish(&mut game, check_or_call);
+    let mut game = Fixture::play(HEADS_UP_PLAY);
+    Fixture::finish(&mut game, Fixture::check_or_call);
     game.next_hand().unwrap();
 
-    finish(&mut game, check_or_call);
+    Fixture::finish(&mut game, Fixture::check_or_call);
 
     assert!(
         game.event().to_string().contains("wins")
@@ -530,7 +540,7 @@ fn game__second_hand_plays_to_the_end() {
 
 #[test]
 fn game__play_with_empty_chairs_and_an_ante() {
-    let mut game = play(
+    let mut game = Fixture::play(
         "\
 mode: play
 seat: 2
@@ -542,7 +552,7 @@ players:
 ",
     );
 
-    finish(&mut game, check_or_call);
+    Fixture::finish(&mut game, Fixture::check_or_call);
 
     let chips: usize = [0, 2, 5]
         .iter()
@@ -560,10 +570,10 @@ fn game__board_keeps_its_deal_order_to_the_end() {
     let front = ["A♠", "K♠", "A♥", "K♥", "Q♠", "2♣", "9♦", "5♥"];
     let rest = DECK.split_whitespace().filter(|card| !front.contains(card));
     let deck: Vec<&str> = front.into_iter().chain(rest).collect();
-    let mut game = play(&format!("{HEADS_UP_PLAY}deck: {}\n", deck.join(" ")));
-    finish(&mut game, check_or_call);
+    let mut game = Fixture::play(&format!("{HEADS_UP_PLAY}deck: {}\n", deck.join(" ")));
+    Fixture::finish(&mut game, Fixture::check_or_call);
 
-    let boards: Vec<String> = moments(&mut game)
+    let boards: Vec<String> = Fixture::moments(&mut game)
         .into_iter()
         .filter(|(_, table)| table.board.len() == 5)
         .map(|(_, table)| table.board.to_string())
@@ -575,14 +585,14 @@ fn game__board_keeps_its_deal_order_to_the_end() {
 
 #[test]
 fn game__hand_over_only_at_the_last_moment() {
-    let mut replay = the_hand("mode: replay\n");
+    let mut replay = Fixture::the_hand("mode: replay\n");
     assert!(!replay.is_hand_over());
     replay.seek(replay.moments() - 1).unwrap();
     assert!(replay.is_hand_over());
 
-    let mut game = play(HEADS_UP_PLAY);
+    let mut game = Fixture::play(HEADS_UP_PLAY);
     assert!(!game.is_hand_over());
-    finish(&mut game, check_or_call);
+    Fixture::finish(&mut game, Fixture::check_or_call);
     assert!(game.is_hand_over());
     game.seek(0).unwrap();
     assert!(!game.is_hand_over());
