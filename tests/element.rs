@@ -5,7 +5,10 @@
 
 use std::fs;
 
+use bowery::check::check;
+use bowery::config::Config;
 use bowery::element::{Table, problems_json};
+use bowery::game::{Event, Game};
 use serde_json::Value;
 
 /// `head` with The Hand inline as `hand:`.
@@ -16,6 +19,15 @@ fn the_hand(head: &str) -> String {
         .flat_map(|line| ["  ", line, "\n"])
         .collect();
     format!("{head}hand:\n{hand}")
+}
+
+/// The hand file at `path`, indented under `hand:` like [`the_hand`] does.
+fn indented(path: &str) -> String {
+    fs::read_to_string(path)
+        .unwrap()
+        .lines()
+        .flat_map(|line| ["  ", line, "\n"])
+        .collect()
 }
 
 const HEADS_UP_PLAY: &str = "\
@@ -245,4 +257,101 @@ fn element__play_state_names_its_delay() {
 #[test]
 fn element__version_is_the_crate_version() {
     assert_eq!(env!("CARGO_PKG_VERSION"), bowery::element::version());
+}
+
+#[test]
+fn element__odds_on_by_default_in_all_view() {
+    let table = Table::new(&the_hand("mode: replay\nview: all\nstart: flop\n")).unwrap();
+    let state = state(&table);
+    assert_eq!(true, state["odds"]);
+    assert_eq!(true, state["controls"]["odds"]);
+    assert!(table.svg(680, false).contains(r#"class="odds""#));
+}
+
+#[test]
+fn element__odds_toggle_off_and_on() {
+    let mut table = Table::new(&the_hand("mode: replay\nview: all\nstart: flop\n")).unwrap();
+    table.set_odds(false);
+    assert_eq!(false, state(&table)["odds"]);
+    assert!(!table.svg(680, false).contains(r#"class="odds""#));
+    table.set_odds(true);
+    assert_eq!(true, state(&table)["odds"]);
+}
+
+#[test]
+fn element__odds_hidden_in_seat_view_and_back_with_the_eye() {
+    let mut table = Table::new(&the_hand(
+        "mode: replay\nview: seat\nseat: 4\nstart: flop\n",
+    ))
+    .unwrap();
+    assert_eq!(false, state(&table)["odds"]);
+    assert_eq!(false, state(&table)["controls"]["odds"]);
+    table.set_view("all").unwrap();
+    assert_eq!(true, state(&table)["odds"]);
+    assert_eq!(true, state(&table)["controls"]["odds"]);
+}
+
+#[test]
+fn element__odds_stay_off_in_seat_view_at_showdown() {
+    let yaml = the_hand("mode: replay\nview: seat\nseat: 4\n");
+    // The showdown moment: both hands are turned up but nothing is paid yet,
+    // so only the view keeps the percents off (the award, after it, has none
+    // in any view).
+    let game = Game::new(check(&Config::from_yaml(&yaml).unwrap()).unwrap()).unwrap();
+    let showdown = (0..game.moments())
+        .find(|index| game.event_at(*index) == Some(&Event::Showdown))
+        .unwrap();
+    let mut table = Table::new(&yaml).unwrap();
+    table.seek(showdown);
+    assert_eq!(showdown + 1, state(&table)["moment"], "on the showdown");
+
+    assert_eq!(false, state(&table)["odds"]);
+    assert!(!table.svg(680, false).contains(r#"class="odds""#));
+    table.set_view("all").unwrap();
+    assert!(
+        table.svg(680, false).contains(r#"class="odds""#),
+        "the all view has them here, so the seat view is what hides them"
+    );
+}
+
+#[test]
+fn element__config_drops_the_odds_button_but_not_the_odds() {
+    let table = Table::new(&the_hand(
+        "mode: replay\nview: all\nstart: flop\ncontrols: { odds: false }\n",
+    ))
+    .unwrap();
+    assert_eq!(false, state(&table)["controls"]["odds"]);
+    assert_eq!(true, state(&table)["odds"]);
+}
+
+#[test]
+fn element__odds_follow_an_action_off_the_record() {
+    // all-in hand, seat 1's view switched to all: a fold instead of the call
+    // leaves one seat live, so the percents go away.
+    let mut table = Table::new(&format!(
+        "mode: interactive\nview: all\nseat: 1\nstart: 1\nhand:\n{}",
+        indented("tests/hands/heads_up_all_in.yaml")
+    ))
+    .unwrap();
+    let before = table.svg(680, false);
+    assert!(before.contains(r#"class="odds""#));
+    table.take_seat(1).unwrap();
+    table.act(r#"{"action":"fold"}"#).unwrap();
+    let after = table.svg(680, false);
+    assert!(
+        !after.contains(r#"class="odds""#),
+        "one live seat shows no percent"
+    );
+}
+
+#[test]
+fn element__odds_start_off_in_play_mode_and_the_button_turns_them_on() {
+    let mut table = Table::new(&format!("{HEADS_UP_PLAY}view: all\n")).unwrap();
+    assert_eq!(false, state(&table)["odds"]);
+    assert_eq!(true, state(&table)["controls"]["odds"]);
+    assert!(!table.svg(680, false).contains(r#"class="odds""#));
+
+    table.set_odds(true);
+
+    assert_eq!(true, state(&table)["odds"]);
 }

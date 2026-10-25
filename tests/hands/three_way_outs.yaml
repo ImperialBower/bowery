@@ -1,0 +1,36 @@
+# Three-handed, NL 50/100, for the outs bar. Seat 0 (Draw, the button) and
+# seat 1 (Set, the small blind) shove 1000; seat 2 (Gone, the big blind)
+# folds a T♠. At the turn (9♣ 6♠ K♥ 2♦) seat 0's 8♠ 7♠ trail the set of
+# sixes with eight outs, a T or a 5, and seat 2's folded T♠ is one of them:
+# the bar must not list it. The river 5♣ completes the straight, so seat 0
+# wins. Action order: seat 0 all_in, seat 1 all_in, seat 2 fold. Every street
+# is dealt, so every named start moment exists.
+pkcore_version: "0.17.3"
+format_version: 1
+hand:
+  id: three_way_outs
+  game: holdem
+table:
+  seats: 3
+  button: 0
+  stakes: { small_blind: 50.0, big_blind: 100.0 }
+players:
+  - { seat: 0, name: Draw, stack: 1000.0, hole_cards: "8♠ 7♠" }
+  - { seat: 1, name: Set, stack: 1000.0, hole_cards: "6♥ 6♦" }
+  - { seat: 2, name: Gone, stack: 1000.0, hole_cards: "T♠ 3♣" }
+board: "9♣ 6♠ K♥ 2♦ 5♣"
+streets:
+  preflop:
+    actions:
+      - { seat: 0, action: all_in, all_in: true }
+      - { seat: 1, action: all_in, all_in: true }
+      - { seat: 2, action: fold }
+  flop:
+    cards: "9♣ 6♠ K♥"
+    actions: []
+  turn:
+    card: "2♦"
+    actions: []
+  river:
+    card: "5♣"
+    actions: []

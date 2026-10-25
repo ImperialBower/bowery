@@ -5,18 +5,34 @@ use std::fs;
 
 use bowery::check::check;
 use bowery::config::{Config, Layout, Moment, View};
-use bowery::draw::{Theme, svg};
-use bowery::game::Game;
-use pkcore::hand_history::HandHistory;
+use bowery::draw::{Theme, geometry, svg};
+use bowery::game::{Event, Game};
+use pkcore::hand_history::{HandHistory, ReplayStreet};
 
 const WIDTH: u32 = 680;
 
-fn the_hand(head: &str) -> Game {
+fn game_of(head: &str, hand_path: &str) -> Game {
     let mut config = Config::from_yaml(head).unwrap();
-    config.hand = Some(
-        HandHistory::from_yaml(&fs::read_to_string("fixtures/the_hand.yaml").unwrap()).unwrap(),
-    );
+    config.hand = Some(HandHistory::from_yaml(&fs::read_to_string(hand_path).unwrap()).unwrap());
     Game::new(check(&config).unwrap()).unwrap()
+}
+
+fn the_hand(head: &str) -> Game {
+    game_of(head, "fixtures/the_hand.yaml")
+}
+
+/// The index of the moment the turn is dealt.
+fn turn_index(game: &Game) -> usize {
+    (0..game.moments())
+        .find(|index| game.event_at(*index) == Some(&Event::Deal(ReplayStreet::Turn)))
+        .unwrap()
+}
+
+/// A hand at its turn, odds on, all cards up.
+fn drawn_with_odds(hand: &str, layout: Layout, theme: Theme) -> String {
+    let mut game = game_of("mode: replay\n", hand);
+    game.seek(turn_index(&game)).unwrap();
+    svg(&game.frame_with_odds(View::All), layout, WIDTH, theme)
 }
 
 /// The Hand at `moment`, all cards up.
@@ -66,7 +82,7 @@ fn draw__golden_the_hand() {
 }
 
 #[test]
-fn draw__golden_files_are_the_twenty_four() {
+fn draw__golden_files_are_the_thirty_six() {
     let count = fs::read_dir("tests/golden")
         .unwrap()
         .filter(|entry| {
@@ -79,7 +95,7 @@ fn draw__golden_files_are_the_twenty_four() {
         })
         .count();
 
-    assert_eq!(24, count);
+    assert_eq!(36, count);
 }
 
 #[test]
@@ -183,4 +199,169 @@ fn draw__board_is_one_group() {
         .unwrap();
     assert_eq!(4, board.matches(r#"data-card=""#).count(), "{board}");
     assert_eq!(1, board.matches(r#"class="slot""#).count(), "{board}");
+}
+
+#[test]
+fn draw__golden_turn_with_odds() {
+    for (file, hand) in [
+        ("the_hand", "fixtures/the_hand.yaml"),
+        ("three_way_outs", "tests/hands/three_way_outs.yaml"),
+    ] {
+        for layout in [Layout::Ring, Layout::Spotlight, Layout::Ledger] {
+            for (theme, theme_name) in [(Theme::Light, "light"), (Theme::Dark, "dark")] {
+                golden(
+                    &format!("{file}-{layout}-turn-odds-{theme_name}"),
+                    &drawn_with_odds(hand, layout, theme),
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn draw__odds_on_every_live_plate_and_the_bar_lists_the_outs() {
+    let svg = drawn_with_odds(
+        "tests/hands/three_way_outs.yaml",
+        Layout::Ring,
+        Theme::Light,
+    );
+    assert_eq!(2, svg.matches(r#"class="odds""#).count());
+    assert!(svg.contains(r#"<g class="outs" data-seat="0">"#));
+    assert!(svg.contains("DRAW · 7 OUTS · 18%"));
+    assert!(svg.contains(r#"data-card="T♥""#) && !svg.contains(r#"data-card="T♠""#));
+}
+
+#[test]
+fn draw__drawing_dead_is_text_not_cards() {
+    // No fixture hand is drawing dead at the turn (in The Hand Negreanu
+    // has one out, the 6♣), so empty the bar by hand before drawing.
+    let mut game = the_hand("mode: replay\n");
+    game.seek(turn_index(&game)).unwrap();
+    let mut frame = game.frame_with_odds(View::All);
+    let bar = frame.odds.as_mut().unwrap().outs.as_mut().unwrap();
+    bar.cards.clear();
+    bar.percent = 0;
+    let svg = svg(&frame, Layout::Ledger, WIDTH, Theme::Light);
+    assert!(svg.contains(r#"class="dead""#));
+    assert!(svg.contains("drawing dead"));
+    assert!(svg.contains("DANIEL NEGREANU · DRAWING DEAD · 0%"));
+    let bar_svg = svg.split(r#"<g class="outs""#).nth(1).unwrap();
+    let bar_svg = bar_svg.split("</g>").next().unwrap();
+    assert!(!bar_svg.contains("data-card"), "no cards inside the bar");
+}
+
+#[test]
+fn draw__one_out_is_one_card_and_a_singular_label() {
+    let svg = drawn_with_odds("fixtures/the_hand.yaml", Layout::Ledger, Theme::Light);
+    assert!(svg.contains(r#"<g class="outs" data-seat="4">"#));
+    assert!(svg.contains("DANIEL NEGREANU · 1 OUT · 2%"));
+    assert!(svg.contains(r#"data-card="6♣""#));
+}
+
+#[test]
+fn draw__seat_view_draws_no_odds_and_no_bar() {
+    let mut game = the_hand("mode: replay\nseat: 4\n");
+    game.seek(turn_index(&game)).unwrap();
+    let svg = svg(
+        &game.frame_with_odds(View::Seat),
+        Layout::Ring,
+        WIDTH,
+        Theme::Light,
+    );
+    assert!(!svg.contains(r#"class="odds""#));
+    assert!(!svg.contains(r#"class="outs""#));
+}
+
+/// A text element's attribute inside `group`, by class and name.
+fn text_attr<'a>(group: &'a str, class: &str, name: &str) -> Option<&'a str> {
+    group
+        .split(&format!(r#"<text class="{class}" "#))
+        .nth(1)?
+        .split('>')
+        .next()?
+        .split(&format!(r#"{name}=""#))
+        .nth(1)?
+        .split('"')
+        .next()
+}
+
+/// A text element's numeric attribute.
+fn text_number(group: &str, class: &str, name: &str) -> Option<u32> {
+    text_attr(group, class, name)?.parse().ok()
+}
+
+/// The text of the element of `class` inside `group`.
+fn text_of<'a>(group: &'a str, class: &str) -> Option<&'a str> {
+    group
+        .split(&format!(r#"<text class="{class}" "#))
+        .nth(1)?
+        .split_once('>')?
+        .1
+        .split('<')
+        .next()
+}
+
+/// The ledger rows of The Hand at the river, all cards up, with odds: each
+/// string runs from one row's start to the next's (cards are groups too).
+fn ledger_rows_at_the_river(width: u32) -> Vec<String> {
+    let mut game = the_hand("mode: replay\n");
+    let moment: Moment = "river".parse().unwrap();
+    let replay = game.config().hand.clone().unwrap().cursor().unwrap();
+    game.seek(moment.index_in(&replay).unwrap()).unwrap();
+    svg(
+        &game.frame_with_odds(View::All),
+        Layout::Ledger,
+        width,
+        Theme::Light,
+    )
+    .split(r#"<g class="seat row"#)
+    .skip(1)
+    .map(str::to_string)
+    .collect()
+}
+
+#[test]
+fn draw__ledger_row_with_a_percent_is_two_lines_below_ledger_wide() {
+    let width = geometry::LEDGER_WIDE;
+    let mut with_percent = 0;
+
+    for row in ledger_rows_at_the_river(width - 8) {
+        if text_attr(&row, "odds", "x").is_none() {
+            continue;
+        }
+        with_percent += 1;
+        assert_eq!(
+            Some("end"),
+            text_attr(&row, "odds", "text-anchor"),
+            "the percent ends the name line: {row}"
+        );
+        assert_ne!(
+            text_number(&row, "name", "y"),
+            text_number(&row, "stack", "y"),
+            "the stack has its own line: {row}"
+        );
+    }
+    assert!(with_percent >= 2, "both live seats show a percent");
+
+    with_percent = 0;
+    for row in ledger_rows_at_the_river(width) {
+        let Some(percent_x) = text_number(&row, "odds", "x") else {
+            continue;
+        };
+        with_percent += 1;
+        assert_eq!(
+            text_number(&row, "name", "y"),
+            text_number(&row, "stack", "y"),
+            "one line: {row}"
+        );
+        // The stack is end-anchored; 11 px monospace is 6.6 px a character.
+        let stack_x = text_number(&row, "stack", "x").unwrap();
+        let chars = u32::try_from(text_of(&row, "stack").unwrap().chars().count()).unwrap();
+        let stack_left = stack_x - (chars * geometry::SMALL_CHAR_TENTHS).div_ceil(10);
+        assert!(
+            percent_x + 27 + geometry::GAP <= stack_left,
+            "{percent_x} + 27 + gap <= {stack_left}: {row}"
+        );
+    }
+    assert!(with_percent >= 2, "both live seats show a percent");
 }

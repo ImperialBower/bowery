@@ -1,9 +1,9 @@
 ---
 type: concept
 title: The element
-description: How <bowery-table> is built: the plain-Rust element surface, the wasm-bindgen wrapper, the JS element, the size gate and the demo site.
-tags: [wasm, element, javascript, epic-20]
-timestamp: '2026-10-22T00:00:00Z'
+description: 'How <bowery-table> is built: the plain-Rust element surface, the wasm-bindgen wrapper, the JS element, the size gate, the odds switch and the demo site.'
+tags: [wasm, element, javascript, odds, epic-20]
+timestamp: '2026-10-24T00:00:00Z'
 ---
 
 # The element
@@ -35,3 +35,27 @@ Builds on [frame and draw](frame-and-draw.md).
   lines in order, `# …` lines for the gaps); `tests/e2e/guide.spec.ts`
   holds them to the files. Their CDN links are pinned like the README's and
   `scripts/dist.sh` checks both.
+- **Odds.** `Table.odds` is the reader's `%` switch (`set_odds` on the element
+  and the wasm face; `State.odds` and `Controls.odds` report it). Odds show
+  only in the `all` view. They start on in replay and interactive mode and off
+  in play: bots run on a timer, a nine-way preflop step is a 25,000-sample
+  Monte Carlo (about a second of the browser's one thread), and nine.html's
+  three timer-driven tables starved the browser proof. The `%` button exists
+  whenever the view is `all` unless the config says `controls: { odds: false }`,
+  which drops the button only, not the odds (as 👁 and ▦ work).
+- **Per-moment cache.** The percents of a moment are computed once and kept by
+  moment index (`Table.cache`): `js/bowery.js::_render` builds the frame three
+  times per render (`state()`, `svg()` and the pacing check), and a seek back
+  must not ask pkcore again. A moment never changes once made and `Game`
+  only ever adds moments at the end, so ▶, a seek, taking a seat and `set_odds`
+  leave the cache alone. An action (`Table::act`, after the game accepts it)
+  keeps the entries below the new moment and drops it and anything after: off
+  the record `Game::act` cuts the line short at the moment acted on
+  (`line.truncate(since + 1)`) and appends the action, so the entries from there
+  on are stale; a refused action, or bad JSON, touches nothing. The next hand, a
+  shuffle and back-to-the-record rebuild the line and empty the cache. A moment
+  with no odds is cached too.
+- **Numbers per target.** Preflop percents are sampled with a seeded
+  `SmallRng`: the same config gives the same numbers on one target, but 32-bit
+  wasm and 64-bit native differ, so a still's preflop figure may differ from the
+  browser's. Guides say so and quote no preflop percent.

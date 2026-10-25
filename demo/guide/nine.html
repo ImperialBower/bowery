@@ -57,7 +57,7 @@ delay_ms: 400
 
 <h2>Step 1: load the element</h2>
 <p>Put this line in the page once. Every table on the page shares it.</p>
-<div class="code"><pre>&lt;script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.1.2/bowery.js"&gt;&lt;/script&gt;</pre></div>
+<div class="code"><pre>&lt;script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.2.0/bowery.js"&gt;&lt;/script&gt;</pre></div>
 <p class="note">To host it yourself, unpack <code>bowery-vX.Y.Z.tar.gz</code> from a
 <a href="https://github.com/ImperialBower/bowery/releases">release</a> into a
 folder, for example <code>bowery/</code>, and load
@@ -104,6 +104,9 @@ its own game; they share one wasm module.</p>
 <h2>Step 3: serve the page</h2>
 <div class="code"><pre>python3 -m http.server 8000</pre></div>
 
+<h2>Win percents</h2>
+<p><b>%</b> shows every live seat's win percent, and with two seats left and one card to come, the trailing seat's outs; it is only there when every card is up. Play mode starts with odds off: the bots run on a timer, and a nine-way preflop step is a second of Monte Carlo in the browser. The reader turns them on with <b>%</b>, which is there because this config says <code>view: all</code>. The preflop percent is sampled, so it may differ from the figure <code>bowery-still --odds</code> prints.</p>
+
 <h2>Settings you can change</h2>
 <table class="fields">
   <tr><th>Field</th><th>Values</th><th>What it does</th></tr>
@@ -113,6 +116,7 @@ its own game; they share one wasm module.</p>
   <tr><td><code>players</code></td><td><code>{ seat, name, stack, bot }</code></td><td>Who sits where. Give each a bot to watch only.</td></tr>
   <tr><td><code>view</code></td><td><code>all</code>, <code>seat</code></td><td>Every card up, or one seat's.</td></tr>
   <tr><td><code>layout</code></td><td><code>ring</code>, <code>spotlight</code>, <code>ledger</code></td><td>How the table is drawn.</td></tr>
+  <tr><td><code>controls.odds</code></td><td><code>true</code>, <code>false</code></td><td>Show the % button. Default: shown when the view is <code>all</code>.</td></tr>
   <tr><td><code>seed</code></td><td>a number</td><td>The same hands on every load.</td></tr>
   <tr><td><code>delay_ms</code></td><td>a number</td><td>Milliseconds between bot moves. Default 700.</td></tr>
 </table>

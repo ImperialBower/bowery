@@ -7,7 +7,15 @@
 //! Options: `--layout ring|spotlight|ledger` (default: the config's),
 //! `--at preflop|flop|turn|river|showdown|last|<index>` (default: the config's
 //! `start`), `--view all|seat` (default: the config's), `--width <px>`
-//! (default 680), `--dark`.
+//! (default 680), `--dark`, `--odds` (every live seat's win percent, and the
+//! outs bar when two seats are left with one card to come).
+//!
+//! ```text
+//! cargo run --example bowery-still -- fixtures/the_hand.yaml --at turn --odds > turn.svg
+//! ```
+//!
+//! A preflop percent is sampled, and 32-bit wasm and 64-bit native sample
+//! differently, so a still's preflop figure may differ from the browser's.
 
 use std::error::Error;
 use std::{env, fs};
@@ -34,7 +42,7 @@ fn config(yaml: &str) -> Result<Config, Box<dyn Error>> {
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().skip(1).collect();
     let path = args.first().ok_or(
-        "usage: bowery-still <config.yaml> [--layout L] [--at M] [--view V] [--width N] [--dark]",
+        "usage: bowery-still <config.yaml> [--layout L] [--at M] [--view V] [--width N] [--dark] [--odds]",
     )?;
     let option = |name: &str| {
         args.iter()
@@ -75,6 +83,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         None => {}
     }
-    println!("{}", svg(&game.frame(view), layout, width, theme));
+    let frame = if args.iter().any(|arg| arg == "--odds") {
+        game.frame_with_odds(view)
+    } else {
+        game.frame(view)
+    };
+    println!("{}", svg(&frame, layout, width, theme));
     Ok(())
 }

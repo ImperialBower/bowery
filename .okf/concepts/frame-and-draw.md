@@ -2,8 +2,8 @@
 type: concept
 title: Frame and draw
 description: How a moment becomes a Frame with the view applied, how geometry places every box, and how the one SVG renderer and its golden files work.
-tags: [frame, draw, svg, geometry, epic-20]
-timestamp: '2026-10-22T00:00:00Z'
+tags: [frame, draw, svg, geometry, odds, epic-20]
+timestamp: '2026-10-24T00:00:00Z'
 ---
 
 # Frame and draw
@@ -24,6 +24,12 @@ timestamp: '2026-10-22T00:00:00Z'
   folded names, and plan and draw both use it, so they agree on its height.
 - **Ring** needs 520 px, and 574 px for its side columns; where its seats do
   not fit, it falls back to ledger.
+- **Ledger's one-line row** starts at `LEDGER_WIDE` (464 px), not `WIDE`
+  (420 px, which spotlight uses for two seats beside the board): a one-line row
+  has to hold the cards, a `100%` and the widest stack (`999,999,999`) on the
+  same baseline, and below 464 px they overlap. `geometry::ledger` and
+  `draw_row` both read `LEDGER_WIDE`, so the plan and the drawing agree; below
+  it a row is two lines and the percent ends the name line.
 - **One renderer.** `svg(frame, layout, width, theme)`: integer coordinates,
   colours as attributes, no CSS or script. Hole cards that are up carry
   `data-card="5♦"`, which is what `draw__seat_view_draws_no_hidden_card`
@@ -41,3 +47,34 @@ timestamp: '2026-10-22T00:00:00Z'
   `rsvg-convert` to look before accepting.
 - `usize` is 32 bits on wasm32: count chips in `u64` where they can pass four
   billion (`format_chips`). `make wasm` catches an overflowing literal.
+- **Odds.** `src/odds.rs`. `Game::frame_with_odds(view)` (and `Frame::with_odds`)
+  fills `Frame.odds`; plain `frame` never asks pkcore. `compute` hands the live
+  seats' hole cards and the board to pkcore's `EquityRequest`, seeded with the
+  game's seed (`Game::seed`), so a replay shows the same numbers each time on
+  one target. It returns `None` once the hand has paid out, with fewer than two
+  live seats, and when a live seat's card is face down, so a hidden hand is
+  never given away. Percents are whole numbers, 0..=100; a row may sum to 99
+  or 101.
+- **Folded cards.** pkcore 0.17 has no dead-cards input, so a folded seat's
+  cards still count as live in the percents. The outs bar removes them by hand
+  (it never lists a card a folded seat holds). pkcore EPIC-123
+  (`../pkcore/docs/epics/EPIC-123_Dead_Cards.md`, in pkcore 0.18.0) adds
+  `EquityRequest::dead`; bowery then passes the folded cards, drops the by-hand
+  filter and re-blesses the goldens whose percents move.
+- **The outs bar** (`Odds.outs`, `OutsBar`) needs odds on, every live card up,
+  exactly two live seats and a four-card board. It names the trailing seat and
+  the river cards that win it the pot alone (a card that only splits does not
+  count); a tie has no bar; zero outs reads `drawing dead`. The Hand at the
+  turn is not that case: Negreanu holds one out. The bar sits under the pot
+  line (under the board in ledger), wraps after `outs_per_row` cards, and the
+  ring grows taller to hold it (`Plan.outs`, `OUTS_*`); it goes through `plan`,
+  so the disjoint-boxes proptest covers it.
+- **Odds classes.** `.odds` is the percent on a plate or ledger row;
+  `.outs .label` is the bar's caption and `.outs .dead` the drawing-dead text.
+  `js/bowery.css` colours all three (`--bowery-fg`, `--bowery-to-act-fg`,
+  `--bowery-muted`); the renderer's attribute colours are the fallback.
+- **Preflop is sampled.** Exact once pkcore can enumerate the runouts (flop,
+  turn, river); preflop is seeded Monte Carlo on a `SmallRng`, and 32-bit wasm
+  and 64-bit native give different numbers. Never quote a preflop percent in a
+  test (outside native goldens), guide or note. `bowery-still --odds` draws a
+  frame with odds.

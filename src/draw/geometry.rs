@@ -12,7 +12,7 @@
 //! use bowery::config::Layout;
 //! use bowery::draw::geometry::plan;
 //!
-//! let plan = plan(Layout::Ring, &[true; 8], &[], 680);
+//! let plan = plan(Layout::Ring, &[true; 8], &[], None, 680);
 //! assert_eq!(Layout::Ring, plan.layout);
 //! assert_eq!(8, plan.seats.len());
 //! ```
@@ -23,9 +23,19 @@ use crate::config::Layout;
 pub const MIN_WIDTH: u32 = 320;
 /// Below this width, ring falls back to ledger (EPIC-20 rule 7).
 pub const RING_MIN_WIDTH: u32 = 520;
-/// From this width, ledger puts a seat on one line instead of two, and
-/// spotlight puts two live seats beside the board.
+/// From this width, spotlight puts two live seats beside the board.
 pub const WIDE: u32 = 420;
+/// From this width, ledger puts a seat on one line instead of two.
+///
+/// The smallest width, rounded up to a multiple of 8, at which a one-line row
+/// holds everything on it: the mark and name columns (32 + 112 px), a 4 px gap,
+/// two small cards (51 px), a 12 px gap, the percent (`100%` at 11 px bold: 27 px),
+/// [`GAP`], the widest stack (`999,999,999`, 11 characters: 73 px) and the
+/// stack's 4 px inset. That is 321 px of plate, and the plate is the canvas
+/// less [`MARGIN`], [`LEDGER_BET_W`] and [`GAP`] (142 px), so 463 px; 464 is
+/// the next multiple of 8. Below it a row is two lines and the percent ends
+/// the name line.
+pub const LEDGER_WIDE: u32 = 464;
 
 /// Space between boxes.
 pub const GAP: u32 = 6;
@@ -63,6 +73,13 @@ pub const STREET_W: u32 = 60;
 pub const STREET_H: u32 = 14;
 /// One line of spotlight's folded strip.
 pub const STRIP_LINE_H: u32 = 14;
+/// The percent's box on a plate, right of the two small cards: `100%` at
+/// 18 px bold (10.8 px a character).
+pub const ODDS_W: u32 = 48;
+/// The outs bar's label line: `NAME · 12 OUTS · 18%`.
+pub const OUTS_LABEL_H: u32 = 14;
+/// One row of small cards in the outs bar, with the gap below it.
+pub const OUTS_ROW_H: u32 = SMALL_CARD_H + GAP;
 /// The width of one character of the 11 px text, in tenths of a pixel
 /// (monospace: 0.6 em).
 pub const SMALL_CHAR_TENTHS: u32 = 66;
@@ -166,7 +183,7 @@ pub struct SeatBoxes {
 /// use bowery::config::Layout;
 /// use bowery::draw::geometry::plan;
 ///
-/// let plan = plan(Layout::Ledger, &[true, false], &[], 680);
+/// let plan = plan(Layout::Ledger, &[true, false], &[], None, 680);
 /// assert_eq!(2, plan.seats.len());
 /// assert!(plan.boxes().len() >= 7);
 /// ```
@@ -192,11 +209,15 @@ pub struct Plan {
     pub street: Option<Rect>,
     /// Ring: the outlined oval, drawn under everything. Not a box.
     pub oval: Option<Rect>,
+    /// The outs bar under the pot, when the plan was asked for one. Its
+    /// height is [`OUTS_LABEL_H`] plus a row of small cards per
+    /// [`outs_per_row`] cards.
+    pub outs: Option<Rect>,
 }
 
 impl Plan {
     /// Every box, for the overlap check: plates, bet slots, board, pot,
-    /// caption, strip and street label. The oval is not a box.
+    /// caption, strip, street label and outs bar. The oval is not a box.
     ///
     /// # Examples
     ///
@@ -204,8 +225,11 @@ impl Plan {
     /// use bowery::config::Layout;
     /// use bowery::draw::geometry::plan;
     ///
-    /// let plan = plan(Layout::Ring, &[true, true], &[], 680);
+    /// let plan = plan(Layout::Ring, &[true, true], &[], None, 680);
     /// assert_eq!(2 * 2 + 3, plan.boxes().len());
+    ///
+    /// let barred = bowery::draw::geometry::plan(Layout::Ring, &[true, true], &[], Some(3), 680);
+    /// assert_eq!(2 * 2 + 4, barred.boxes().len());
     /// ```
     #[must_use]
     pub fn boxes(&self) -> Vec<Rect> {
@@ -217,13 +241,15 @@ impl Plan {
         boxes.extend([self.board, self.pot, self.caption]);
         boxes.extend(self.strip);
         boxes.extend(self.street);
+        boxes.extend(self.outs);
         boxes
     }
 }
 
 /// Places every box of `layout` for seats whose liveness is `live` (in seat
 /// order), with `folded` the names spotlight lists in its strip, at `width`
-/// pixels.
+/// pixels. `outs` is `Some(card count)` when the outs bar is wanted (`Some(0)`
+/// is a bar for a seat that is drawing dead) and `None` for no bar.
 ///
 /// Ring needs [`RING_MIN_WIDTH`], and room for its seats: two rows of plates,
 /// and a column on each side from 574 px. Where it does not fit it falls back
@@ -236,15 +262,54 @@ impl Plan {
 /// use bowery::config::Layout;
 /// use bowery::draw::geometry::plan;
 ///
-/// assert_eq!(Layout::Ledger, plan(Layout::Ring, &[true; 6], &[], 400).layout);
+/// assert_eq!(Layout::Ledger, plan(Layout::Ring, &[true; 6], &[], None, 400).layout);
+///
+/// let with_bar = plan(Layout::Ledger, &[true, true], &[], Some(12), 680);
+/// assert!(with_bar.outs.is_some());
 /// ```
 #[must_use]
-pub fn plan(layout: Layout, live: &[bool], folded: &[String], width: u32) -> Plan {
+pub fn plan(
+    layout: Layout,
+    live: &[bool],
+    folded: &[String],
+    outs: Option<usize>,
+    width: u32,
+) -> Plan {
     let width = width.max(MIN_WIDTH);
     match layout {
-        Layout::Ring => ring(live.len(), width).unwrap_or_else(|| ledger(live.len(), width)),
-        Layout::Spotlight => spotlight(live, folded, width),
-        Layout::Ledger => ledger(live.len(), width),
+        Layout::Ring => {
+            ring(live.len(), outs, width).unwrap_or_else(|| ledger(live.len(), outs, width))
+        }
+        Layout::Spotlight => spotlight(live, folded, outs, width),
+        Layout::Ledger => ledger(live.len(), outs, width),
+    }
+}
+
+/// How many small cards fit in one row of an outs bar `bar_width` wide: a
+/// card and the 3 px between cards, at least 1.
+///
+/// # Examples
+///
+/// ```
+/// use bowery::draw::geometry::outs_per_row;
+///
+/// assert_eq!(14, outs_per_row(396));
+/// assert_eq!(1, outs_per_row(0));
+/// ```
+#[must_use]
+pub fn outs_per_row(bar_width: u32) -> u32 {
+    ((bar_width + 3) / (SMALL_CARD_W + 3)).max(1)
+}
+
+/// An outs bar of `cards` small cards, wrapped to the width `w`, at `x`, `y`.
+fn bar(x: u32, w: u32, y: u32, cards: usize) -> Rect {
+    let cards = u32::try_from(cards).unwrap_or(u32::MAX);
+    let rows = cards.div_ceil(outs_per_row(w)).max(1);
+    Rect {
+        x,
+        y,
+        w,
+        h: OUTS_LABEL_H.saturating_add(rows.saturating_mul(OUTS_ROW_H)),
     }
 }
 
@@ -344,7 +409,7 @@ fn centred(width: u32, w: u32, y: u32, h: u32) -> Rect {
 /// Ring: plates on fixed slots outside an oval, bets in reserved slots
 /// between each plate and the centre. Rows only, or rows and two side
 /// columns from 574 px. `None` when the seats do not fit.
-fn ring(seats: usize, width: u32) -> Option<Plan> {
+fn ring(seats: usize, outs: Option<usize>, width: u32) -> Option<Plan> {
     let count = u32::try_from(seats).ok()?;
     if width < RING_MIN_WIDTH || count == 0 {
         return None;
@@ -360,7 +425,17 @@ fn ring(seats: usize, width: u32) -> Option<Plan> {
     let top_bets = PLATE_H + GAP;
     let middle = top_bets + BET_H + GAP;
     let pot_y = middle + CARD_H + GAP;
-    let bottom_bets = middle + PLATE_H + GAP;
+    let oval_inset = PLATE_W / 2;
+    let pot = centred(width, POT_W, pot_y, POT_H);
+    let outs = outs.map(|cards| {
+        bar(
+            oval_inset + GAP,
+            width - 2 * oval_inset - 2 * GAP,
+            pot.bottom() + GAP,
+            cards,
+        )
+    });
+    let bottom_bets = (middle + PLATE_H).max(outs.map_or(0, |bar| bar.bottom())) + GAP;
     let bottom_y = bottom_bets + BET_H + GAP;
     let caption_y = bottom_y + PLATE_H + GAP;
     let height = caption_y + CAPTION_H;
@@ -414,14 +489,13 @@ fn ring(seats: usize, width: u32) -> Option<Plan> {
         bet: Some(bet_under(plate, bottom_bets)),
     }));
 
-    let oval_inset = PLATE_W / 2;
     Some(Plan {
         layout: Layout::Ring,
         width,
         height,
         seats: slots,
         board: centred(width, BOARD_W, middle, CARD_H),
-        pot: centred(width, POT_W, pot_y, POT_H),
+        pot,
         caption: Rect {
             x: 0,
             y: caption_y,
@@ -436,13 +510,14 @@ fn ring(seats: usize, width: u32) -> Option<Plan> {
             w: width - 2 * oval_inset,
             h: bottom_y,
         }),
+        outs,
     })
 }
 
 /// Ledger: the board, pot and street on top, then one row per seat. A row
-/// is one line from [`WIDE`], two below it.
-fn ledger(seats: usize, width: u32) -> Plan {
-    let wide = width >= WIDE;
+/// is one line from [`LEDGER_WIDE`], two below it.
+fn ledger(seats: usize, outs: Option<usize>, width: u32) -> Plan {
+    let wide = width >= LEDGER_WIDE;
     let board = Rect {
         x: MARGIN,
         y: MARGIN,
@@ -470,7 +545,15 @@ fn ledger(seats: usize, width: u32) -> Plan {
         w: STREET_W,
         h: STREET_H,
     };
-    let header = pot.bottom().max(board.bottom()) + GAP;
+    let outs = outs.map(|cards| {
+        bar(
+            MARGIN,
+            width - 2 * MARGIN,
+            pot.bottom().max(board.bottom()) + GAP,
+            cards,
+        )
+    });
+    let header = outs.map_or(pot.bottom().max(board.bottom()), |bar| bar.bottom()) + GAP;
     let row_h = if wide {
         SMALL_CARD_H + 6
     } else {
@@ -513,13 +596,14 @@ fn ledger(seats: usize, width: u32) -> Plan {
         strip: None,
         street: Some(street),
         oval: None,
+        outs,
     }
 }
 
 /// Spotlight: folded seats as a strip of names on top, live seats large.
 /// Two live seats sit either side of the board from [`WIDE`]; otherwise the
 /// board and pot come first and live seats follow in a grid.
-fn spotlight(live: &[bool], folded: &[String], width: u32) -> Plan {
+fn spotlight(live: &[bool], folded: &[String], outs: Option<usize>, width: u32) -> Plan {
     let lines = u32::try_from(strip_lines(folded, width).len()).unwrap_or(u32::MAX);
     let strip = (lines > 0).then(|| Rect {
         x: 0,
@@ -532,7 +616,8 @@ fn spotlight(live: &[bool], folded: &[String], width: u32) -> Plan {
     let mut seats = vec![SeatBoxes::default(); live.len()];
     let live_indexes: Vec<usize> = (0..live.len()).filter(|index| live[*index]).collect();
 
-    let (board, pot, bottom) = if live_count == 2 && width >= WIDE {
+    let bar_at = |y: u32| outs.map(|cards| bar(MARGIN, width - 2 * MARGIN, y, cards));
+    let (board, pot, bottom, outs) = if live_count == 2 && width >= WIDE {
         let left = Rect {
             x: MARGIN,
             y: top,
@@ -551,14 +636,17 @@ fn spotlight(live: &[bool], folded: &[String], width: u32) -> Plan {
         }
         let board = centred(width, BOARD_W, top, CARD_H);
         let pot = centred(width, POT_W, board.bottom() + GAP, POT_H);
-        (board, pot, (top + PLATE_H + GAP + BET_H).max(pot.bottom()))
+        let beside = (top + PLATE_H + GAP + BET_H).max(pot.bottom());
+        let outs = bar_at(beside + GAP);
+        (board, pot, outs.map_or(beside, |bar| bar.bottom()), outs)
     } else {
         let board = centred(width, BOARD_W, top, CARD_H);
         let pot = centred(width, POT_W, board.bottom() + GAP, POT_H);
         let columns = ((width - 2 * MARGIN + GAP) / (PLATE_W + GAP)).max(1);
         let cell_h = PLATE_H + GAP + BET_H + 2 * GAP;
-        let grid_y = pot.bottom() + 2 * GAP;
-        let mut bottom = pot.bottom();
+        let outs = bar_at(pot.bottom() + GAP);
+        let grid_y = outs.map_or(pot.bottom(), |bar| bar.bottom()) + 2 * GAP;
+        let mut bottom = outs.map_or(pot.bottom(), |bar| bar.bottom());
         for (slot, index) in live_indexes.iter().enumerate() {
             let slot = u32::try_from(slot).unwrap_or(0);
             let plate = Rect {
@@ -574,7 +662,7 @@ fn spotlight(live: &[bool], folded: &[String], width: u32) -> Plan {
                 bet: Some(bet),
             };
         }
-        (board, pot, bottom)
+        (board, pot, bottom, outs)
     };
     let caption_y = bottom + GAP;
     Plan {
@@ -593,6 +681,7 @@ fn spotlight(live: &[bool], folded: &[String], width: u32) -> Plan {
         strip,
         street: None,
         oval: None,
+        outs,
     }
 }
 
@@ -629,6 +718,156 @@ mod tests {
     fn pot__holds_the_widest_pot() {
         // `POT 999,999,999` at 16 px bold, 9.6 px a character.
         assert!(fits(15, 96, 8, POT_W));
+    }
+
+    #[test]
+    fn plate__holds_the_percent_beside_the_cards() {
+        // `100%` at 18 px bold, 10.8 px a character, right of two small cards.
+        const { assert!(4 + 2 * SMALL_CARD_W + 3 + 4 + ODDS_W + 4 <= PLATE_W) };
+        assert!(fits(4, 108, 4, ODDS_W));
+    }
+
+    #[test]
+    fn ledger__one_line_row_holds_the_percent_and_the_widest_stack() {
+        // `100%` at 11 px bold and `999,999,999` (format_chips never gives
+        // more than 11 characters), both at 6.6 px a character.
+        const PERCENT: u32 = (4 * SMALL_CHAR_TENTHS).div_ceil(10);
+        const STACK: u32 = (11 * SMALL_CHAR_TENTHS).div_ceil(10);
+        const NEEDED: u32 = 32 + 112 + 4 + 2 * SMALL_CARD_W + 3 + 12 + PERCENT + GAP + STACK + 4;
+        const ROOM: u32 = MARGIN + LEDGER_BET_W + GAP;
+        const { assert!(NEEDED <= LEDGER_WIDE - ROOM) };
+        // The smallest multiple of 8 at which it holds.
+        const { assert!(LEDGER_WIDE.is_multiple_of(8)) };
+        const { assert!(NEEDED > LEDGER_WIDE - 8 - ROOM) };
+        assert_eq!(464, LEDGER_WIDE);
+    }
+
+    #[test]
+    fn ledger__rows_are_one_line_from_ledger_wide() {
+        let height = |width| {
+            plan(Layout::Ledger, &[true, true], &[], None, width).seats[0]
+                .plate
+                .unwrap()
+                .h
+        };
+
+        assert_eq!(SMALL_CARD_H + 6, height(LEDGER_WIDE));
+        assert_eq!(2 * SMALL_CARD_H - 10, height(LEDGER_WIDE - 1));
+        assert_eq!(2 * SMALL_CARD_H - 10, height(WIDE));
+    }
+
+    #[test]
+    fn spotlight__seats_sit_beside_the_board_from_wide() {
+        let live = [true, true];
+        let beside = |width| {
+            let plan = plan(Layout::Spotlight, &live, &[], None, width);
+            plan.seats[0].plate.unwrap().y == plan.board.y
+        };
+
+        assert!(beside(WIDE));
+        assert!(!beside(WIDE - 1));
+    }
+
+    #[test]
+    fn outs_per_row__fourteen_fit_in_the_narrowest_ring() {
+        let plan = plan(Layout::Ring, &[true, true], &[], Some(14), RING_MIN_WIDTH);
+        assert!(outs_per_row(plan.outs.unwrap().w) >= 14);
+    }
+
+    #[test]
+    fn outs_per_row__counts_cards_and_is_at_least_one() {
+        assert_eq!(1, outs_per_row(0));
+        assert_eq!(1, outs_per_row(SMALL_CARD_W));
+        assert_eq!(2, outs_per_row(2 * SMALL_CARD_W + 3));
+        assert_eq!(24, outs_per_row(664));
+    }
+
+    #[test]
+    fn ring__grows_for_the_bar_and_keeps_the_board_still() {
+        let without = plan(Layout::Ring, &[true; 8], &[], None, 680);
+        let with = plan(Layout::Ring, &[true; 8], &[], Some(8), 680);
+        assert_eq!(without.board, with.board);
+        assert_eq!(without.pot, with.pot);
+        assert!(with.height > without.height);
+        assert!(with.oval.unwrap().h > without.oval.unwrap().h);
+        assert!(with.outs.unwrap().y >= with.pot.bottom());
+    }
+
+    #[test]
+    fn ring__bar_sits_inside_the_oval_under_the_pot() {
+        let plan = plan(Layout::Ring, &[true; 4], &[], Some(3), 680);
+        let (bar, oval) = (plan.outs.unwrap(), plan.oval.unwrap());
+
+        assert_eq!(plan.pot.bottom() + GAP, bar.y);
+        assert_eq!(oval.x + GAP, bar.x);
+        assert_eq!(oval.w - 2 * GAP, bar.w);
+    }
+
+    #[test]
+    fn ledger__bar_sits_under_the_header_and_pushes_the_rows() {
+        let without = plan(Layout::Ledger, &[true, true], &[], None, 680);
+        let with = plan(Layout::Ledger, &[true, true], &[], Some(3), 680);
+        let bar = with.outs.unwrap();
+
+        assert_eq!((MARGIN, 680 - 2 * MARGIN), (bar.x, bar.w));
+        assert_eq!(with.pot.bottom().max(with.board.bottom()) + GAP, bar.y);
+        assert_eq!(bar.bottom() + GAP, with.seats[0].plate.unwrap().y);
+        assert_eq!(without.board, with.board);
+        assert!(with.height > without.height);
+    }
+
+    #[test]
+    fn spotlight__bar_sits_under_the_plates_beside_the_board() {
+        let live = [true, true];
+        let with = plan(Layout::Spotlight, &live, &[], Some(3), 680);
+        let without = plan(Layout::Spotlight, &live, &[], None, 680);
+        let bar = with.outs.unwrap();
+        let bets_bottom = with
+            .seats
+            .iter()
+            .filter_map(|seat| seat.bet)
+            .map(|bet| bet.bottom())
+            .max()
+            .unwrap();
+
+        assert_eq!((MARGIN, 680 - 2 * MARGIN), (bar.x, bar.w));
+        assert_eq!(with.pot.bottom().max(bets_bottom) + GAP, bar.y);
+        assert_eq!(without.seats, with.seats);
+        assert_eq!(bar.bottom() + GAP, with.caption.y);
+    }
+
+    #[test]
+    fn spotlight__bar_sits_between_the_pot_and_the_grid() {
+        let live = [true, true, true];
+        let with = plan(Layout::Spotlight, &live, &[], Some(3), 680);
+        let without = plan(Layout::Spotlight, &live, &[], None, 680);
+        let bar = with.outs.unwrap();
+        let first = with.seats[0].plate.unwrap();
+
+        assert_eq!(with.pot.bottom() + GAP, bar.y);
+        assert_eq!(bar.bottom() + 2 * GAP, first.y);
+        assert_eq!(without.pot, with.pot);
+    }
+
+    #[test]
+    fn spotlight__bar_keeps_the_caption_clear_with_nobody_live() {
+        let with = plan(Layout::Spotlight, &[false, false], &[], Some(2), 680);
+
+        assert!(with.caption.y >= with.outs.unwrap().bottom());
+    }
+
+    #[test]
+    fn bar__wraps_to_rows() {
+        let one = plan(Layout::Ledger, &[true, true], &[], Some(1), 320);
+        let many = plan(Layout::Ledger, &[true, true], &[], Some(44), 320);
+        assert!(many.outs.unwrap().h > one.outs.unwrap().h);
+        assert_eq!(
+            OUTS_LABEL_H + OUTS_ROW_H,
+            plan(Layout::Ledger, &[true, true], &[], Some(0), 680)
+                .outs
+                .unwrap()
+                .h
+        );
     }
 
     #[test]

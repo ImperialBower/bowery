@@ -493,6 +493,13 @@ pub struct Controls {
     /// The ▦ layout toggle.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub layout: Option<bool>,
+    /// The `%` odds button. Default: shown when the view is `all`; `false`
+    /// drops the button, not the odds. In replay and interactive the odds
+    /// start on, so with the button gone they stay on. In play they start off
+    /// and the button is the only way to turn them on, so `controls: { odds:
+    /// false }` there means no odds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub odds: Option<bool>,
 }
 
 #[cfg(test)]
@@ -543,6 +550,18 @@ mod tests {
         assert_eq!(Controls::default(), config.controls);
         assert_eq!(Vec::<PlayerSetup>::new(), config.players);
         assert_eq!(None, config.view);
+    }
+
+    #[test]
+    fn controls__odds_reads_and_round_trips() {
+        let config = Config::from_yaml("mode: play\ncontrols: { odds: false }\n").unwrap();
+        assert_eq!(Some(false), config.controls.odds);
+        assert_eq!(
+            None,
+            Config::from_yaml("mode: play\n").unwrap().controls.odds
+        );
+        let again = Config::from_yaml(&config.to_yaml().unwrap()).unwrap();
+        assert_eq!(config, again);
     }
 
     #[test]

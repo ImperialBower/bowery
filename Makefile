@@ -75,6 +75,7 @@ e2e-pages: ## the e2e pages and their configs, into site/e2e/
 	{ printf 'mode: replay\nview: seat\nseat: 1\nhand:\n'; sed 's/^/  /' tests/hands/heads_up_all_in.yaml; } > site/e2e/all-in-replay.yaml
 	{ printf 'mode: interactive\nview: seat\nseat: 1\nstart: 1\ndelay_ms: 25\nhand:\n'; sed 's/^/  /' tests/hands/heads_up_all_in.yaml; } > site/e2e/all-in-interactive.yaml
 	{ printf 'mode: replay\nstart: 2\nhand:\n'; sed 's/^/  /' fixtures/the_hand.yaml; } > site/e2e/the-hand-raise.yaml
+	{ printf 'mode: replay\nview: all\nhand:\n'; sed 's/^/  /' tests/hands/three_way_outs.yaml; } > site/e2e/outs-replay.yaml
 
 dist: pkg ## the release directory dist/bowery/: npm package and tarball contents, MANIFEST.sha256
 	rm -rf dist
