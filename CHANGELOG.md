@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-25
+
 ### Changed
 
 - **Breaking: `odds::compute` is now `Odds::compute`.** Same arguments, same
   result; a call `odds::compute(…)` becomes `Odds::compute(…)` with
   `use bowery::odds::Odds;`. The module's private helpers moved onto `Odds`
-  and `OutsBar` as well, so `src/odds.rs` has no free functions. The next
-  release is therefore `0.3.0`.
+  and `OutsBar` as well, so `src/odds.rs` has no free functions. These
+  renames are why this release is `0.3.0`, not `0.2.1`.
 - **Breaking: `frame::format_chips` is now `Frame::format_chips`.** Same
   argument, same text. `frame.rs`'s private helpers (`occupied`, `status`,
   `faces`, `last_action`, `street_name`, `caption`) moved onto `Frame` too.

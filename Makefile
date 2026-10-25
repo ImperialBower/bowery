@@ -1,5 +1,5 @@
 .PHONY: default help clean fmt build wasm test lint security-scan docs ayce pkg size site serve e2e e2e-pages dist
-default: ayce
+default: help
 
 help:  ## self-documenting: every target has a '## comment' printed here
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  make %-16s %s\n", $$1, $$2}'
