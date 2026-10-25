@@ -296,6 +296,26 @@ impl BoweryTable {
             .map_err(|error| JsValue::from_str(&error))
     }
 
+    /// Turns the win percents on or off; they show only in the `all` view.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::wasm::BoweryTable;
+    ///
+    /// let mut table = BoweryTable::new("
+    /// mode: play
+    /// view: all
+    /// table: { stakes: { small_blind: 1.0, big_blind: 2.0 } }
+    /// players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
+    /// ").unwrap();
+    /// table.set_odds(true); // play starts with the odds off
+    /// assert!(table.state().contains(r#""odds":true"#));
+    /// ```
+    pub fn set_odds(&mut self, on: bool) {
+        self.table.set_odds(on);
+    }
+
     /// Draws in `layout` from now on: `ring`, `spotlight` or `ledger`.
     ///
     /// # Errors
