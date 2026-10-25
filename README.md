@@ -35,7 +35,7 @@ Each table links to a guide that shows how to set it up, step by step:
 ## In a web page
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.1.2/bowery.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@imperialbower/bowery@0.2.0/bowery.js"></script>
 
 <bowery-table>
   <script type="application/yaml">
