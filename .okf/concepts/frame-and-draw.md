@@ -48,19 +48,20 @@ timestamp: '2026-10-24T00:00:00Z'
 - `usize` is 32 bits on wasm32: count chips in `u64` where they can pass four
   billion (`format_chips`). `make wasm` catches an overflowing literal.
 - **Odds.** `src/odds.rs`. `Game::frame_with_odds(view)` (and `Frame::with_odds`)
-  fills `Frame.odds`; plain `frame` never asks pkcore. `compute` hands the live
+  fills `Frame.odds`; plain `frame` never asks pkcore. `Odds::compute` hands the live
   seats' hole cards and the board to pkcore's `EquityRequest`, seeded with the
   game's seed (`Game::seed`), so a replay shows the same numbers each time on
   one target. It returns `None` once the hand has paid out, with fewer than two
   live seats, and when a live seat's card is face down, so a hidden hand is
   never given away. Percents are whole numbers, 0..=100; a row may sum to 99
   or 101.
-- **Folded cards.** pkcore 0.17 has no dead-cards input, so a folded seat's
-  cards still count as live in the percents. The outs bar removes them by hand
-  (it never lists a card a folded seat holds). pkcore EPIC-123
-  (`../pkcore/docs/epics/EPIC-123_Dead_Cards.md`, in pkcore 0.18.0) adds
-  `EquityRequest::dead`; bowery then passes the folded cards, drops the by-hand
-  filter and re-blesses the goldens whose percents move.
+- **Folded cards are dead cards.** `folded_cards` reads a folded seat's hole
+  cards off the pkcore table, and both odds paths hand them to pkcore as dead:
+  the percents through `EquityRequest::dead` (pkcore EPIC-123, 0.18.0) and the
+  outs bar's river enumeration through `Game::with_dead` (pkcore DEFECT_042,
+  0.19.0). bowery filters nothing by hand. Before 0.18.0 the percents counted
+  those cards as live; moving to 0.18.0 changed The Hand's turn (Negreanu 2% →
+  3%) and `three_way_outs` (Draw 18% → 17%), and the goldens were re-blessed.
 - **The outs bar** (`Odds.outs`, `OutsBar`) needs odds on, every live card up,
   exactly two live seats and a four-card board. It names the trailing seat and
   the river cards that win it the pot alone (a card that only splits does not

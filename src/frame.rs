@@ -37,7 +37,7 @@ use pkcore::hand_history::ReplayStreet;
 
 use crate::config::View;
 use crate::game::{Event, Game, RecordState};
-use crate::odds::{self, Odds};
+use crate::odds::Odds;
 
 /// Everything on screen at one moment.
 ///
@@ -341,7 +341,7 @@ impl Frame {
     }
 
     /// The frame for the moment `game` is on, with the win percents worked
-    /// out: [`Frame::new`], then [`odds::compute`] on what it shows.
+    /// out: [`Frame::new`], then [`Odds::compute`] on what it shows.
     ///
     /// `odds` stays `None` when any live seat's card is face down, when
     /// fewer than two seats are live, and once the hand has paid out.
@@ -367,7 +367,7 @@ impl Frame {
     #[must_use]
     pub fn with_odds(game: &Game, view: View) -> Self {
         let mut frame = Self::new(game, view);
-        frame.odds = odds::compute(
+        frame.odds = Odds::compute(
             game.table(),
             &frame.seats,
             &frame.board,

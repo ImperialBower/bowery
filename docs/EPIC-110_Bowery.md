@@ -22,7 +22,7 @@
 | Phase 4 — wasm surface and `<bowery-table>` | Done — 4a–4c |
 | Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Done — 5a–5d |
 | Phase 6 — release `v0.1.0`: crates.io, npm, tarball | Done — 6a–6c: v0.1.0 on crates.io, npm (with provenance) and GitHub; pkarena0-web's EPIC-56 superseded |
-| Phase 7 — odds on the plates and the outs bar | Done — spec docs/superpowers/specs/2026-10-24-odds-and-outs-design.md; pkcore EPIC-123 pending for dead cards |
+| Phase 7 — odds on the plates and the outs bar | Done — 7a shipped `v0.2.0`; 7b and 7c landed 2026-10-25, unreleased |
 
 ### Phase 0 notes
 
@@ -221,3 +221,45 @@
 - **6c.** pkarena0-web: EPIC-56 marked superseded, its `release.yml` removed
   so later releases attach no `pk-table-*.tar.gz`, README and CHANGELOG
   updated; v0.2.1 and v0.2.2 keep their tarballs.
+
+### Phase 7 notes
+
+Not in EPIC-20's original scope — added here because it shipped after that
+EPIC's v0.1.0.
+
+- **7a, done.** `src/odds.rs`: win percent per live seat from pkcore's
+  equity engine, and an outs bar for a two-handed, one-card-to-come spot;
+  `config.rs:502` `controls.odds`; the percent on each plate and a bar under
+  the pot (`draw/geometry.rs:252`, `draw/mod.rs:696-731`); the `%` button,
+  and the view/play cache per moment. Shipped `v0.2.0`.
+- **7b, done, `2026-10-25`.** pkcore had no way to say a folded hand's cards
+  are dead, not just unknown, so a folded seat's known cards could come back
+  as a runout card and skew the plate percents (not the outs bar's card
+  list, which already filtered them by hand). `Cargo.toml:32` bumped to
+  `0.18.0`; `Odds::compute` (`src/odds.rs`) sets `request.dead` to every
+  folded seat's known cards via pkcore's `EquityRequest::dead` (pkcore
+  EPIC-123, its own item 3e, now closed). The Hand's Negreanu one-out
+  percent moved 2% → 3%; `three_way_outs`'s Draw moved 18% → 17% (both more
+  correct). TDD: a failing test
+  (`odds::tests::compute__a_folded_seats_known_cards_are_dead_not_just_unknown`)
+  first, then the fix; golden SVGs re-blessed; `tests/odds.rs`,
+  `tests/draw.rs` and `tests/e2e/odds.spec.ts` updated to the new numbers;
+  `make ayce` green (26/26 e2e). The outs bar's by-hand filter stayed: it
+  enumerates the river with `Game::turn_case_evals`, a separate pkcore path
+  EPIC-123 left without a `dead` parameter. Written up on pkcore's side as
+  [DEFECT_042](https://github.com/ImperialBower/pkcore/blob/main/docs/defects/DEFECT_042_turn_case_evals_has_no_dead_cards.md);
+  closed by 7c.
+- **7c, done, `2026-10-25`.** pkcore `0.19.0` fixed DEFECT_042 with
+  `Game::dead` / `Game::with_dead`; `0.20.0` (DEFECT_043) took it to every
+  street. `Cargo.toml:32` bumped to `0.20.0`. `OutsBar::at_turn`
+  (`src/odds.rs`; it was the free fn `outs_bar`) now builds its `Game` with
+  `.with_dead(…)` from the same `Odds::folded_cards`, and
+  the by-hand `.filter(|card| !held.contains(card))` is gone. The suite was
+  green on `0.20.0` before any code change. Then, with the filter removed and
+  nothing passed in its place,
+  `odds::tests::outs_bar__leaves_out_a_folded_seats_cards` failed (it listed
+  the folded `6♣`). It passed again once `with_dead` was in. The bar's cards
+  are unchanged, so no golden SVG or e2e number moved. bowery uses no other
+  path 0.20.0 changed: no `FlopEval`, `DealEval`, `street_equities` or
+  `Table::build_game` call (pkcore's own `river_case_eval` reads
+  `build_game` at the river, where there is nothing left to deal).

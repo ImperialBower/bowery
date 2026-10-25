@@ -8,7 +8,7 @@ use bowery::check::check;
 use bowery::config::{Config, View};
 use bowery::frame::{CardFace, Frame, SeatStatus};
 use bowery::game::{Event, Game};
-use bowery::odds::{self, OutsBar};
+use bowery::odds::{Odds, OutsBar};
 use pkcore::card::Card;
 use pkcore::casino::action::PlayerAction;
 use pkcore::hand_history::{HandHistory, ReplayStreet};
@@ -177,7 +177,7 @@ players: [ { seat: 0, stack: 200 }, { seat: 1, stack: 200, bot: abc } ]
     blank.seats[0].cards = [CardFace::None, CardFace::None];
     assert_eq!(
         None,
-        odds::compute(game.table(), &blank.seats, &blank.board, false, game.seed())
+        Odds::compute(game.table(), &blank.seats, &blank.board, false, game.seed())
     );
 }
 
@@ -218,8 +218,8 @@ fn outs__two_left_one_card_to_come_lists_the_trailing_seats_outs() {
         "T♠ is in the folded hand"
     );
     assert_eq!(
-        18, bar.percent,
-        "pkcore counts the folded T♠ as live until EPIC-123"
+        17, bar.percent,
+        "pkcore 0.18.0: Gone's folded T♠ is dead, not a live runout card"
     );
 }
 
@@ -234,7 +234,7 @@ fn outs__a_pair_of_sixes_behind_quad_fives_has_one_out() {
     assert_eq!(NEGREANU, bar.seat);
     assert_eq!("Daniel Negreanu", bar.name);
     assert_eq!(vec![card("6♣")], bar.cards);
-    assert_eq!(2, bar.percent);
+    assert_eq!(3, bar.percent);
 }
 
 #[test]

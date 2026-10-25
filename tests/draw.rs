@@ -227,7 +227,7 @@ fn draw__odds_on_every_live_plate_and_the_bar_lists_the_outs() {
     );
     assert_eq!(2, svg.matches(r#"class="odds""#).count());
     assert!(svg.contains(r#"<g class="outs" data-seat="0">"#));
-    assert!(svg.contains("DRAW · 7 OUTS · 18%"));
+    assert!(svg.contains("DRAW · 7 OUTS · 17%"));
     assert!(svg.contains(r#"data-card="T♥""#) && !svg.contains(r#"data-card="T♠""#));
 }
 
@@ -254,7 +254,7 @@ fn draw__drawing_dead_is_text_not_cards() {
 fn draw__one_out_is_one_card_and_a_singular_label() {
     let svg = drawn_with_odds("fixtures/the_hand.yaml", Layout::Ledger, Theme::Light);
     assert!(svg.contains(r#"<g class="outs" data-seat="4">"#));
-    assert!(svg.contains("DANIEL NEGREANU · 1 OUT · 2%"));
+    assert!(svg.contains("DANIEL NEGREANU · 1 OUT · 3%"));
     assert!(svg.contains(r#"data-card="6♣""#));
 }
 

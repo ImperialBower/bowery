@@ -30,7 +30,7 @@ use crate::config::{Config, Layout, Mode, View};
 use crate::draw::{Theme, svg};
 use crate::frame::{Award, Frame, SeatStatus};
 use crate::game::{Advance, Event, Game, RecordState};
-use crate::odds::{self, Odds};
+use crate::odds::Odds;
 
 /// Bot pacing when the config gives no `delay_ms`.
 const DEFAULT_DELAY_MS: u32 = 700;
@@ -315,7 +315,7 @@ impl Table {
             frame.odds = cache
                 .entry(self.game.at())
                 .or_insert_with(|| {
-                    odds::compute(
+                    Odds::compute(
                         self.game.table(),
                         &frame.seats,
                         &frame.board,

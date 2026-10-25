@@ -399,9 +399,9 @@ checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
 name = "pkcore"
-version = "0.17.3"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab93137de6540d7b2254b6bb69ce55624eb7cbee637e9ec39ddf0649b820cfce"
+checksum = "c91f6dd7e4925a3b9ce23ad83f9c449f1c6d7a3d6dac976e1413d232147b24bb"
 dependencies = [
  "bitvec",
  "cardpack",

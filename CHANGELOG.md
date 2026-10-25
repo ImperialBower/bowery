@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking: `odds::compute` is now `Odds::compute`.** Same arguments, same
+  result; a call `odds::compute(…)` becomes `Odds::compute(…)` with
+  `use bowery::odds::Odds;`. The module's private helpers moved onto `Odds`
+  and `OutsBar` as well, so `src/odds.rs` has no free functions. The next
+  release is therefore `0.3.0`.
+
+- **Odds percents now treat a folded seat's known cards as dead.** pkcore
+  `0.18.0` added `EquityRequest::dead` (pkcore EPIC-123); bowery passes each
+  folded seat's known hole cards through it, so they can no longer come back
+  as a runout card for a live seat's win percent. Percents move slightly
+  (closer to correct) wherever a seat has folded with known cards: at The
+  Hand's turn Negreanu reads 3%, not 2%.
+- **The outs bar asks pkcore to leave folded cards out.** pkcore `0.19.0`
+  added `Game::with_dead` (pkcore DEFECT_042), so the river enumeration no
+  longer deals a card a folded seat holds. bowery passes those cards in and
+  no longer removes them from the result by hand. The bar's cards are the
+  same as before.
+  - `pkcore` bumped to `0.20.0`.
+
 ## [0.2.0] - 2026-10-24
 
 ### Added

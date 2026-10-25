@@ -15,7 +15,7 @@ test('odds: percents show, the bar lists the outs at the turn, % hides them', as
     shown = await snapshot(page, 'outs');
   }
   expect(shown.caption).toMatch(/^Turn · /);
-  expect(shown.odds).toEqual(['18%', '82%']);
+  expect(shown.odds).toEqual(['17%', '83%']);
   expect(shown.outs).toEqual(['T♥', 'T♦', 'T♣', '5♠', '5♥', '5♦', '5♣']);
   const percent = bar.getByRole('button', { name: 'odds' });
   await expect(percent).toHaveAttribute('aria-pressed', 'true');
