@@ -41,7 +41,11 @@ use pkcore::casino::action::PlayerAction;
 
 use crate::config::Layout;
 use crate::frame::{CardFace, Frame, SeatFrame, SeatStatus, format_chips};
-use geometry::{CARD_H, CARD_W, MARGIN, Plan, Rect, SMALL_CARD_H, SMALL_CARD_W};
+use crate::odds::OutsBar;
+use geometry::{
+    CARD_H, CARD_W, MARGIN, OUTS_LABEL_H, OUTS_ROW_H, Plan, Rect, SMALL_CARD_H, SMALL_CARD_W,
+    outs_per_row,
+};
 
 /// The font stack: the system's monospace.
 const FONT: &str = "ui-monospace, Menlo, Consolas, monospace";
@@ -138,7 +142,14 @@ pub fn svg(frame: &Frame, layout: Layout, width: u32, theme: Theme) -> String {
         .map(|seat| in_hand(seat.status))
         .collect();
     let folded = folded_names(frame);
-    let plan = geometry::plan(layout, &live, &folded, width);
+    let bar = frame.odds.as_ref().and_then(|odds| odds.outs.as_ref());
+    let plan = geometry::plan(
+        layout,
+        &live,
+        &folded,
+        bar.map(|bar| bar.cards.len()),
+        width,
+    );
     let palette = theme.palette();
     let mut out = String::with_capacity(16 * 1024);
     open_svg(&mut out, frame, &plan, &palette);
@@ -153,10 +164,19 @@ pub fn svg(frame: &Frame, layout: Layout, width: u32, theme: Theme) -> String {
     }
     draw_board(&mut out, frame, plan.board, &palette);
     draw_pot_and_street(&mut out, frame, &plan, &palette);
-    for (seat, boxes) in frame.seats.iter().zip(&plan.seats) {
+    if let (Some(bar), Some(rect)) = (bar, plan.outs) {
+        draw_outs(&mut out, bar, rect, &palette);
+    }
+    for (index, (seat, boxes)) in frame.seats.iter().zip(&plan.seats).enumerate() {
+        let percent = frame
+            .odds
+            .as_ref()
+            .and_then(|odds| odds.percents.get(index).copied().flatten());
         match (plan.layout, boxes.plate) {
-            (Layout::Ledger, Some(plate)) => draw_row(&mut out, seat, plate, plan.width, &palette),
-            (_, Some(plate)) => draw_plate(&mut out, seat, plate, &palette),
+            (Layout::Ledger, Some(plate)) => {
+                draw_row(&mut out, seat, plate, plan.width, percent, &palette);
+            }
+            (_, Some(plate)) => draw_plate(&mut out, seat, plate, percent, &palette),
             (_, None) => {}
         }
         if let Some(slot) = boxes.bet {
@@ -465,7 +485,16 @@ fn stack_text(seat: &SeatFrame) -> String {
 }
 
 /// A ring or spotlight plate: name, stack and marks, two small cards.
-fn draw_plate(out: &mut String, seat: &SeatFrame, plate: Rect, palette: &Palette) {
+///
+/// `percent` is the seat's win percent, drawn big beside the cards, when the
+/// frame has odds for it.
+fn draw_plate(
+    out: &mut String,
+    seat: &SeatFrame,
+    plate: Rect,
+    percent: Option<u8>,
+    palette: &Palette,
+) {
     let ink = if in_hand(seat.status) {
         palette.ink
     } else {
@@ -517,17 +546,48 @@ fn draw_plate(out: &mut String, seat: &SeatFrame, plate: Rect, palette: &Palette
             palette,
         );
     }
+    if let Some(percent) = percent {
+        draw_plate_percent(out, percent, plate, ink);
+    }
     out.push_str("</g>");
 }
 
+/// A plate's win percent, big, at the right of the cards.
+fn draw_plate_percent(out: &mut String, percent: u8, plate: Rect, ink: &'static str) {
+    draw_text(
+        out,
+        &Text {
+            x: plate.right() - 4,
+            y: plate.y + 52,
+            size: 18,
+            bold: true,
+            anchor: "end",
+            fill: ink,
+            class: "odds",
+        },
+        &format!("{percent}%"),
+    );
+}
+
 /// A ledger row: mark, name, cards and stack; a rule underneath.
-fn draw_row(out: &mut String, seat: &SeatFrame, plate: Rect, width: u32, palette: &Palette) {
+///
+/// `percent` is the seat's win percent, when the frame has odds for it: after
+/// the cards on a wide row (from [`geometry::LEDGER_WIDE`]), at the right edge
+/// of the name line on a narrow one.
+fn draw_row(
+    out: &mut String,
+    seat: &SeatFrame,
+    plate: Rect,
+    width: u32,
+    percent: Option<u8>,
+    palette: &Palette,
+) {
     let ink = if in_hand(seat.status) {
         palette.ink
     } else {
         palette.grey
     };
-    let wide = width >= geometry::WIDE;
+    let wide = width >= geometry::LEDGER_WIDE;
     let _ = write!(
         out,
         r#"<g class="{}" data-seat="{}">"#,
@@ -588,6 +648,14 @@ fn draw_row(out: &mut String, seat: &SeatFrame, plate: Rect, width: u32, palette
             palette,
         );
     }
+    if let Some(percent) = percent {
+        let x = if wide {
+            cards_x + 2 * SMALL_CARD_W + 3 + 12
+        } else {
+            plate.right() - 4
+        };
+        draw_row_percent(out, percent, x, name_y, wide, ink);
+    }
     let stack = if seat.status == SeatStatus::AllIn {
         stack_text(seat)
     } else {
@@ -603,6 +671,83 @@ fn draw_row(out: &mut String, seat: &SeatFrame, plate: Rect, width: u32, palette
         r#"<line x1="0" y1="{y}" x2="{width}" y2="{y}" stroke="{ink}" stroke-width="1"/>"#,
         y = plate.bottom()
     );
+    out.push_str("</g>");
+}
+
+/// A ledger row's win percent: starting at `x` on a wide row, ending at `x`
+/// on a narrow one.
+fn draw_row_percent(out: &mut String, percent: u8, x: u32, y: u32, wide: bool, ink: &'static str) {
+    draw_text(
+        out,
+        &Text {
+            x,
+            y,
+            size: 11,
+            bold: true,
+            anchor: if wide { "start" } else { "end" },
+            fill: ink,
+            class: "odds",
+        },
+        &format!("{percent}%"),
+    );
+}
+
+/// The outs bar: a label, then the out cards in centred rows, or the words
+/// `drawing dead` when there are none.
+///
+/// The label is the bar's `Display` with the name cut to [`NAME_CHARS`],
+/// uppercased. The bar is as wide as its layout allows, so the label fits.
+fn draw_outs(out: &mut String, bar: &OutsBar, rect: Rect, palette: &Palette) {
+    let _ = write!(out, r#"<g class="outs" data-seat="{}">"#, bar.seat);
+    let label = OutsBar {
+        name: cut(&bar.name, NAME_CHARS),
+        ..bar.clone()
+    };
+    draw_text(
+        out,
+        &Text {
+            x: rect.x + rect.w / 2,
+            y: rect.y + 10,
+            size: 10,
+            bold: true,
+            anchor: "middle",
+            fill: palette.grey,
+            class: "label",
+        },
+        &label.to_string().to_uppercase(),
+    );
+    if bar.cards.is_empty() {
+        draw_text(
+            out,
+            &Text {
+                x: rect.x + rect.w / 2,
+                y: rect.y + OUTS_LABEL_H + SMALL_CARD_H / 2 + 4,
+                size: 11,
+                bold: false,
+                anchor: "middle",
+                fill: palette.grey,
+                class: "dead",
+            },
+            "drawing dead",
+        );
+    }
+    let per_row = usize::try_from(outs_per_row(rect.w)).unwrap_or(1);
+    for (row, cards) in (0u32..).zip(bar.cards.chunks(per_row)) {
+        let count = u32::try_from(cards.len()).unwrap_or(0);
+        let row_w = (count * (SMALL_CARD_W + 3)).saturating_sub(3);
+        let x = rect.x + rect.w.saturating_sub(row_w) / 2;
+        let y = rect.y + OUTS_LABEL_H + row * OUTS_ROW_H;
+        for (index, card) in (0u32..).zip(cards) {
+            draw_card(
+                out,
+                x + index * (SMALL_CARD_W + 3),
+                y,
+                true,
+                CardFace::Up(*card),
+                palette,
+            );
+        }
+    }
     out.push_str("</g>");
 }
 
@@ -742,6 +887,165 @@ mod tests {
         {
             assert!((10..=38).contains(&number), "{number} in {path}");
         }
+    }
+
+    fn seat(status: SeatStatus) -> SeatFrame {
+        SeatFrame {
+            seat: 2,
+            name: "Gus Hansen".to_string(),
+            stack: 500,
+            bet: 0,
+            cards: [CardFace::None, CardFace::None],
+            status,
+            marks: crate::frame::Marks::default(),
+            last: None,
+            to_act: false,
+        }
+    }
+
+    fn bar(count: usize) -> OutsBar {
+        let all = [
+            "T♥", "T♦", "T♣", "5♠", "5♥", "5♦", "5♣", "9♠", "9♥", "9♦", "9♣", "8♠",
+        ];
+        OutsBar {
+            seat: 2,
+            name: "Gus Hansen".to_string(),
+            percent: 18,
+            cards: all
+                .iter()
+                .take(count)
+                .filter_map(|text| text.parse().ok())
+                .collect(),
+        }
+    }
+
+    fn plate() -> Rect {
+        Rect {
+            x: 10,
+            y: 20,
+            w: geometry::PLATE_W,
+            h: geometry::PLATE_H,
+        }
+    }
+
+    #[test]
+    fn draw_plate__percent_sits_at_the_right_edge() {
+        let mut out = String::new();
+        draw_plate(
+            &mut out,
+            &seat(SeatStatus::Live),
+            plate(),
+            Some(96),
+            &Theme::Light.palette(),
+        );
+        assert!(
+            out.contains(r##"<text class="odds" x="118" y="72" font-size="18" font-weight="700" text-anchor="end" fill="#000000">96%</text>"##),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn draw_plate__no_percent_no_text() {
+        let mut out = String::new();
+        draw_plate(
+            &mut out,
+            &seat(SeatStatus::Live),
+            plate(),
+            None,
+            &Theme::Light.palette(),
+        );
+        assert!(!out.contains(r#"class="odds""#));
+    }
+
+    #[test]
+    fn draw_row__wide_percent_follows_the_cards() {
+        let mut out = String::new();
+        draw_row(
+            &mut out,
+            &seat(SeatStatus::Live),
+            plate(),
+            680,
+            Some(7),
+            &Theme::Light.palette(),
+        );
+        // cards_x = 10 + 32 + 112 + 4 = 158; 158 + 48 + 3 + 12 = 221
+        assert!(
+            out.contains(r#"class="odds" x="221" y="44" font-size="11" font-weight="700" text-anchor="start""#),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn draw_row__narrow_percent_ends_the_name_line() {
+        let mut out = String::new();
+        draw_row(
+            &mut out,
+            &seat(SeatStatus::Live),
+            plate(),
+            400,
+            Some(7),
+            &Theme::Light.palette(),
+        );
+        assert!(
+            out.contains(
+                r#"class="odds" x="118" y="35" font-size="11" font-weight="700" text-anchor="end""#
+            ),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn draw_outs__label_is_cut_and_uppercased_with_one_card_per_out() {
+        let mut out = String::new();
+        let mut bar = bar(7);
+        bar.name = "Wolfeschlegelsteinhausenberger".to_string();
+        let rect = Rect {
+            x: 8,
+            y: 100,
+            w: 400,
+            h: 54,
+        };
+        draw_outs(&mut out, &bar, rect, &Theme::Light.palette());
+        assert!(out.starts_with(r#"<g class="outs" data-seat="2">"#));
+        assert!(out.ends_with("</g>"));
+        assert!(out.contains("WOLFESCHLEGELST… · 7 OUTS · 18%"), "{out}");
+        assert_eq!(7, out.matches("data-card=").count());
+        assert!(!out.contains(r#"class="dead""#));
+    }
+
+    #[test]
+    fn draw_outs__rows_wrap_and_each_row_is_centred() {
+        let mut out = String::new();
+        // 3 cards per row at width 85: (85 + 3) / 27 = 3; 5 cards = 3 + 2.
+        let rect = Rect {
+            x: 0,
+            y: 100,
+            w: 85,
+            h: 100,
+        };
+        draw_outs(&mut out, &bar(5), rect, &Theme::Light.palette());
+        // first row: 3 * 24 + 2 * 3 = 78, x = (85 - 78) / 2 = 3, y = 114
+        assert!(out.contains(r#"<rect x="3" y="114" width="24""#), "{out}");
+        // second row: 2 * 24 + 3 = 51, x = 17, y = 114 + 40 = 154
+        assert!(out.contains(r#"<rect x="17" y="154" width="24""#), "{out}");
+    }
+
+    #[test]
+    fn draw_outs__drawing_dead_is_text() {
+        let mut out = String::new();
+        let mut bar = bar(0);
+        bar.percent = 0;
+        let rect = Rect {
+            x: 8,
+            y: 100,
+            w: 400,
+            h: 54,
+        };
+        draw_outs(&mut out, &bar, rect, &Theme::Light.palette());
+        assert!(out.contains(r#"class="dead""#));
+        assert!(out.contains(">drawing dead<"));
+        assert!(out.contains("GUS HANSEN · DRAWING DEAD · 0%"));
+        assert!(!out.contains("data-card"));
     }
 
     #[test]

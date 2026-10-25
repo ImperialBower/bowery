@@ -146,6 +146,18 @@
   fill: var(--bowery-muted);
 }
 
+/* odds: the win percent on a live seat, and the outs bar's label */
+.bowery .seat .odds {
+  fill: var(--bowery-fg);
+}
+.bowery .seat.to-act .odds {
+  fill: var(--bowery-to-act-fg);
+}
+.bowery .outs .label,
+.bowery .outs .dead {
+  fill: var(--bowery-muted);
+}
+
 /* cards: light faces so they lift off the table; a patterned back */
 .bowery .card rect {
   fill: var(--bowery-card);
