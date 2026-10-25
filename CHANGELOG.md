@@ -7,8 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-24
+
 ### Added
 
+- **Odds on the plates and an outs bar.** Every live seat shows its win
+  percent (a whole number), from pkcore's equity engine, and when two seats
+  are left with one card to come, a bar under the pot lists the river cards
+  that win the trailing seat the pot alone (`drawing dead` when there are
+  none). Nothing shows in the `seat` view, when any live seat's card is face
+  down, with fewer than two live seats, or after the payout. The numbers are
+  seeded, so a replay shows the same figures each time on one target; a
+  preflop percent is sampled, and 32-bit wasm and 64-bit native differ, so a
+  still's preflop figure may differ from the browser's.
+  - New public API: the `odds` module (`Odds`, `OutsBar`, `compute`);
+    `Frame.odds` and `Frame::with_odds`; `Game::seed` and
+    `Game::frame_with_odds`; `set_odds` on the element and the wasm face;
+    `controls.odds` in the config; a `%` button; `bowery-still --odds`.
+  - Odds start on in replay and interactive mode when the view is `all`, and
+    off in play mode: bots run on a timer, and a nine-way preflop step is a
+    25,000-sample Monte Carlo, about a second of the browser's one thread.
+    The reader turns them on with `%`. `controls: { odds: false }` drops the
+    button only, not the odds.
+  - Folded cards: pkcore 0.17 has no dead-cards input, so a folded seat's
+    cards still count as live in the percents. The outs bar removes a folded
+    seat's cards by hand. pkcore's
+    [EPIC-123](https://github.com/ImperialBower/pkcore/blob/main/docs/epics/EPIC-123_Dead_Cards.md)
+    (pkcore 0.18.0) adds `EquityRequest::dead`; bowery will pass the folded
+    cards then.
+  - 12 new golden files; the guides explain the `%` button and
+    `controls.odds`.
+  - The wasm grows from 1,295,901 to 1,313,728 bytes (`make size`:
+    `bowery_wasm_bg.wasm: 1313728 bytes (gate 1425491)`).
 - **The demo on GitHub Pages**, at <https://imperialbower.github.io/bowery/>,
   linked from the README. `.github/workflows/pages.yaml` publishes `site/`
   from `main` after the browser proof passes, without the proof's own pages.

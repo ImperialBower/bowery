@@ -118,6 +118,7 @@ bowery:</p>
   <li>Act with the action buttons. Act as the record did, and the record
     goes on. Act otherwise, and the hand goes off the record.</li>
   <li><b>Back to the record</b> returns to the moment of the takeover.</li>
+  <li><b>%</b> shows every live seat's win percent, and with two seats left and one card to come, the trailing seat's outs; it is only there when every card is up. Odds start on in this mode. The preflop percent is sampled, so it may differ from the figure <code>bowery-still --odds</code> prints. <code>controls: { odds: false }</code> drops the button only; the percents stay.</li>
 </ol>
 
 <h2>Settings you can change</h2>
@@ -131,6 +132,7 @@ bowery:</p>
   <tr><td><code>view</code></td><td><code>all</code>, <code>seat</code></td><td>All hole cards up (default), or only those of <code>seat</code>.</td></tr>
   <tr><td><code>players</code></td><td>a list of <code>{ seat, bot }</code></td><td>The bot for a seat off the record. Default <code>gto</code>.</td></tr>
   <tr><td><code>seed</code></td><td>a number</td><td>Seeds the bots, so the same choices give the same hand.</td></tr>
+  <tr><td><code>controls.odds</code></td><td><code>true</code>, <code>false</code></td><td>Show the % button. Default: shown when the view is <code>all</code>.</td></tr>
   <tr><td><code>delay_ms</code></td><td>a number</td><td>Milliseconds between bot moves. Default 700.</td></tr>
 </table>
 <p class="note">Every field: <a href="https://docs.rs/bowery/latest/bowery/config/struct.Config.html"><code>Config</code> on docs.rs</a>.</p>

@@ -107,6 +107,7 @@ bowery:</p>
 <ul>
   <li>⏮ ◀ ▶ ⏭ under the table: first, back, next, last.</li>
   <li>Keys, when the table has focus: ← → Home End.</li>
+  <li><b>%</b> shows every live seat's win percent, and with two seats left and one card to come, the trailing seat's outs; it is only there when every card is up. Odds start on in a replay. The preflop percent is sampled, so it may differ from the figure <code>bowery-still --odds</code> prints. <code>controls: { odds: false }</code> drops the button only; the percents stay.</li>
 </ul>
 
 <h2>Settings you can change</h2>
@@ -119,6 +120,7 @@ bowery:</p>
   <tr><td><code>view</code></td><td><code>all</code>, <code>seat</code></td><td>All hole cards up (default), or only those of <code>seat</code>.</td></tr>
   <tr><td><code>seat</code></td><td>0 to 9</td><td>The seat for <code>view: seat</code>. Seats count from 0.</td></tr>
   <tr><td><code>controls</code></td><td><code>{ view: true, layout: true }</code></td><td>Show the 👁 view and ▦ layout toggles.</td></tr>
+  <tr><td><code>controls.odds</code></td><td><code>true</code>, <code>false</code></td><td>Show the % button. Default: shown when the view is <code>all</code>.</td></tr>
 </table>
 <p class="note">Every field: <a href="https://docs.rs/bowery/latest/bowery/config/struct.Config.html"><code>Config</code> on docs.rs</a>.
 A config with a problem shows the problem in the table, with the field and

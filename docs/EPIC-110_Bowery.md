@@ -22,6 +22,7 @@
 | Phase 4 — wasm surface and `<bowery-table>` | Done — 4a–4c |
 | Phase 5 — Playwright: D1–D8, multi-instance, off-origin zero | Done — 5a–5d |
 | Phase 6 — release `v0.1.0`: crates.io, npm, tarball | Done — 6a–6c: v0.1.0 on crates.io, npm (with provenance) and GitHub; pkarena0-web's EPIC-56 superseded |
+| Phase 7 — odds on the plates and the outs bar | Done — spec docs/superpowers/specs/2026-10-24-odds-and-outs-design.md; pkcore EPIC-123 pending for dead cards |
 
 ### Phase 0 notes
 

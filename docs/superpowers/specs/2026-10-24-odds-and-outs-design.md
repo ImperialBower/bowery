@@ -1,7 +1,7 @@
 # Odds and outs on the table
 
-**Date:** 24 October 2026. **Status:** design, approved in conversation,
-awaiting plan.
+**Date:** 24 October 2026. **Status:** implemented on branch `odds`
+(plan `docs/superpowers/plans/2026-10-24-odds-and-outs.md`), 0.2.0.
 
 ## Intent
 
@@ -112,9 +112,16 @@ card that only splits the pot does not count and is not shown.
 Odds are a table-level state like the view and the layout:
 
 - `on` or `off`. The reader flips it with a `%` button beside 👁 and ▦.
-- Default: on when the table's view is `all`. Off in the `seat` view, and
-  the button is hidden there. Switching the view to `all` brings the
-  button back and the odds with it, unless the reader had turned them off.
+- Default: on when the table's view is `all`, in replay and interactive
+  mode. Off in the `seat` view, and the button is hidden there. Switching
+  the view to `all` brings the button back and the odds with it, unless the
+  reader had turned them off.
+- Play mode starts with odds off, button shown. (Builder's call, 24 Oct:
+  bots run on a timer, and a nine-way preflop step costs a 25,000-sample
+  Monte Carlo, about a second of the browser's one thread; three such
+  tables on one page starved the browser proof. Lowering the sample count
+  would trade pkcore's whole-percent honesty for speed, so the reader opts
+  in with `%` instead.)
 - The author drops the button with `controls: { odds: false }` in the
   config. With the button dropped, odds are still on by default in the
   `all` view; the author who wants no odds at all sets `odds: false` and
