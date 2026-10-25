@@ -40,9 +40,10 @@ proptest! {
         layout in layouts(),
         live in prop::collection::vec(any::<bool>(), 2..=10),
         folded in prop::collection::vec("[A-Za-z ()]{1,21}", 0..=10),
+        outs in prop::option::of(0usize..=44),
         width in 320u32..=1_400,
     ) {
-        let plan = plan(layout, &live, &folded, width);
+        let plan = plan(layout, &live, &folded, outs, width);
 
         prop_assert_eq!(None, overlapping(&plan), "{:?} {} seats at {}", plan.layout, live.len(), width);
         prop_assert_eq!(None, outside(&plan), "{:?} {} seats at {}", plan.layout, live.len(), width);
@@ -53,7 +54,7 @@ proptest! {
 fn geometry__every_seat_has_a_plate_but_folded_spotlight_seats() {
     let live = [true, false, true, false, true];
     for layout in [Layout::Ring, Layout::Ledger] {
-        let plan = plan(layout, &live, &[], 680);
+        let plan = plan(layout, &live, &[], None, 680);
         assert!(
             plan.seats
                 .iter()
@@ -65,6 +66,7 @@ fn geometry__every_seat_has_a_plate_but_folded_spotlight_seats() {
         Layout::Spotlight,
         &live,
         &["Seat 1".to_string(), "Seat 3".to_string()],
+        None,
         680,
     );
     let plates: Vec<bool> = spotlight
@@ -77,8 +79,28 @@ fn geometry__every_seat_has_a_plate_but_folded_spotlight_seats() {
 }
 
 #[test]
+fn geometry__no_bar_without_outs() {
+    for layout in [Layout::Ring, Layout::Spotlight, Layout::Ledger] {
+        assert_eq!(
+            None,
+            plan(layout, &[true, true], &[], None, 680).outs,
+            "{layout}"
+        );
+    }
+}
+
+#[test]
+fn geometry__the_bar_is_a_box_when_outs_are_given() {
+    for layout in [Layout::Ring, Layout::Spotlight, Layout::Ledger] {
+        let plan = plan(layout, &[true, true], &[], Some(5), 680);
+        let bar = plan.outs.expect("a bar");
+        assert!(plan.boxes().contains(&bar), "{layout}");
+    }
+}
+
+#[test]
 fn geometry__ring_holds_ten_seats_in_the_book_column() {
-    let plan = plan(Layout::Ring, &[true; 10], &[], 680);
+    let plan = plan(Layout::Ring, &[true; 10], &[], None, 680);
 
     assert_eq!(Layout::Ring, plan.layout);
     assert!((280..=320).contains(&plan.height), "{}", plan.height);
@@ -88,11 +110,11 @@ fn geometry__ring_holds_ten_seats_in_the_book_column() {
 fn geometry__ring_falls_back_to_ledger_below_520() {
     assert_eq!(
         Layout::Ring,
-        plan(Layout::Ring, &[true; 8], &[], 520).layout
+        plan(Layout::Ring, &[true; 8], &[], None, 520).layout
     );
     assert_eq!(
         Layout::Ledger,
-        plan(Layout::Ring, &[true; 2], &[], 519).layout
+        plan(Layout::Ring, &[true; 2], &[], None, 519).layout
     );
 }
 
@@ -100,13 +122,13 @@ fn geometry__ring_falls_back_to_ledger_below_520() {
 fn geometry__ring_falls_back_when_the_seats_do_not_fit() {
     assert_eq!(
         Layout::Ledger,
-        plan(Layout::Ring, &[true; 10], &[], 520).layout
+        plan(Layout::Ring, &[true; 10], &[], None, 520).layout
     );
 }
 
 #[test]
 fn geometry__narrow_widths_draw_at_320() {
-    let plan = plan(Layout::Ledger, &[true; 4], &[], 200);
+    let plan = plan(Layout::Ledger, &[true; 4], &[], None, 200);
 
     assert_eq!(320, plan.width);
 }
