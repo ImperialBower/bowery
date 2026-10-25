@@ -36,9 +36,9 @@ fails if a fixture has no `check__<name>` test.
   blind of 0 fails `Game::new` with "Insufficient chips"; a button off the
   table plays the hand, then fails to settle (`validate` refuses the rebuilt
   hand's `table.button`); a stack of 0 deals the player in but refuses their
-  every action. `check` refuses all three. A button on an empty chair plays
+  every action. `Checked::new` refuses all three. A button on an empty chair plays
   fine.
-- A recorded hand brings its own table, so `check` refuses `table` beside
+- A recorded hand brings its own table, so `Checked::new` refuses `table` beside
   one (it was once documented as an override and did nothing).
 
 See the [quality gate](../processes/quality-gate.md).

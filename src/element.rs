@@ -25,9 +25,9 @@ use std::collections::HashMap;
 use pkcore::casino::action::PlayerAction;
 use serde::{Deserialize, Serialize};
 
-use crate::check::{Problem, check};
+use crate::check::{Checked, Problem};
 use crate::config::{Config, Layout, Mode, View};
-use crate::draw::{Theme, svg};
+use crate::draw::{Renderer, Theme};
 use crate::frame::{Award, Frame, SeatStatus};
 use crate::game::{Advance, Event, Game, RecordState};
 use crate::odds::Odds;
@@ -263,7 +263,7 @@ impl Table {
     }
 
     fn from_config(config: &Config) -> Result<Self, Vec<Problem>> {
-        let game = Game::new(check(config)?).map_err(|error| {
+        let game = Game::new(Checked::new(config)?).map_err(|error| {
             vec![Problem::Config {
                 path: String::new(),
                 message: error.to_string(),
@@ -295,7 +295,7 @@ impl Table {
     #[must_use]
     pub fn svg(&self, width: u32, dark: bool) -> String {
         let theme = if dark { Theme::Dark } else { Theme::Light };
-        svg(&self.frame(), self.layout, width, theme)
+        Renderer::svg(&self.frame(), self.layout, width, theme)
     }
 
     /// Whether the win percents are on screen: the switch is on and the view
@@ -658,7 +658,8 @@ impl Table {
         }
         config.seed = Some(seed);
         config.deck = None;
-        let fresh = Self::from_config(&config).map_err(|problems| problems_json(&problems))?;
+        let fresh =
+            Self::from_config(&config).map_err(|problems| Self::problems_json(&problems))?;
         self.game = fresh.game;
         self.cache.get_mut().clear();
         Ok(())
@@ -738,54 +739,56 @@ impl Table {
     }
 }
 
-/// The problems as JSON for the element to print under the picture:
-/// `[{"path":"hand","message":"…","rule":null}]`; a hand finding's path
-/// starts with `hand.` and carries its rule.
-///
-/// # Examples
-///
-/// ```
-/// use bowery::element::{Table, problems_json};
-///
-/// let problems = Table::new("mode: replay\n").unwrap_err();
-/// assert!(problems_json(&problems).contains(r#""path":"hand""#));
-/// ```
-#[must_use]
-pub fn problems_json(problems: &[Problem]) -> String {
-    #[derive(Serialize)]
-    struct Shown {
-        path: String,
-        message: String,
-        rule: Option<String>,
+impl Table {
+    /// The problems as JSON for the element to print under the picture:
+    /// `[{"path":"hand","message":"…","rule":null}]`; a hand finding's path
+    /// starts with `hand.` and carries its rule.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use bowery::element::Table;
+    ///
+    /// let problems = Table::new("mode: replay\n").unwrap_err();
+    /// assert!(Table::problems_json(&problems).contains(r#""path":"hand""#));
+    /// ```
+    #[must_use]
+    pub fn problems_json(problems: &[Problem]) -> String {
+        #[derive(Serialize)]
+        struct Shown {
+            path: String,
+            message: String,
+            rule: Option<String>,
+        }
+        let shown: Vec<Shown> = problems
+            .iter()
+            .map(|problem| match problem {
+                Problem::Hand(finding) => Shown {
+                    path: format!("hand.{}", finding.path),
+                    message: finding.message.clone(),
+                    rule: Some(finding.rule.to_string()),
+                },
+                Problem::Config { path, message } => Shown {
+                    path: path.clone(),
+                    message: message.clone(),
+                    rule: None,
+                },
+            })
+            .collect();
+        serde_json::to_string(&shown).unwrap_or_else(|_| "[]".to_string())
     }
-    let shown: Vec<Shown> = problems
-        .iter()
-        .map(|problem| match problem {
-            Problem::Hand(finding) => Shown {
-                path: format!("hand.{}", finding.path),
-                message: finding.message.clone(),
-                rule: Some(finding.rule.to_string()),
-            },
-            Problem::Config { path, message } => Shown {
-                path: path.clone(),
-                message: message.clone(),
-                rule: None,
-            },
-        })
-        .collect();
-    serde_json::to_string(&shown).unwrap_or_else(|_| "[]".to_string())
-}
 
-/// This crate's version, for the element's badge and `bowery:ready`.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(env!("CARGO_PKG_VERSION"), bowery::element::version());
-/// ```
-#[must_use]
-pub fn version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
+    /// This crate's version, for the element's badge and `bowery:ready`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(env!("CARGO_PKG_VERSION"), bowery::element::Table::version());
+    /// ```
+    #[must_use]
+    pub fn version() -> &'static str {
+        env!("CARGO_PKG_VERSION")
+    }
 }
 
 #[cfg(test)]
@@ -795,70 +798,75 @@ mod tests {
 
     const ALL_IN: &str = include_str!("../tests/hands/heads_up_all_in.yaml");
 
-    fn all_in(head: &str) -> Table {
-        let hand: String = ALL_IN.lines().flat_map(|line| ["  ", line, "\n"]).collect();
-        Table::new(&format!("{head}hand:\n{hand}")).unwrap()
-    }
+    /// Tables for the tests, and a look at their odds cache.
+    struct Fixture;
 
-    fn cached(table: &Table) -> usize {
-        table.cache.borrow().len()
+    impl Fixture {
+        fn all_in(head: &str) -> Table {
+            let hand: String = ALL_IN.lines().flat_map(|line| ["  ", line, "\n"]).collect();
+            Table::new(&format!("{head}hand:\n{hand}")).unwrap()
+        }
+
+        fn cached(table: &Table) -> usize {
+            table.cache.borrow().len()
+        }
     }
 
     #[test]
     fn frame__fills_the_cache_once_per_moment() {
-        let table = all_in("mode: replay\nview: all\nstart: flop\n");
-        assert_eq!(0, cached(&table));
+        let table = Fixture::all_in("mode: replay\nview: all\nstart: flop\n");
+        assert_eq!(0, Fixture::cached(&table));
 
         let first = table.frame();
         let second = table.frame();
 
-        assert_eq!(1, cached(&table));
+        assert_eq!(1, Fixture::cached(&table));
         assert!(first.odds.is_some());
         assert_eq!(first.odds, second.odds);
     }
 
     #[test]
     fn frame__hits_the_cache_after_a_seek_back() {
-        let mut table = all_in("mode: replay\nview: all\nstart: flop\n");
+        let mut table = Fixture::all_in("mode: replay\nview: all\nstart: flop\n");
         let flop = table.frame().odds;
         table.seek(table.state().moment); // the next moment
         assert!(table.frame().odds.is_some());
-        assert_eq!(2, cached(&table));
+        assert_eq!(2, Fixture::cached(&table));
 
         table.seek(table.state().moment.saturating_sub(2)); // back to the flop
         let again = table.frame().odds;
 
-        assert_eq!(2, cached(&table), "a seek leaves the cache alone");
+        assert_eq!(2, Fixture::cached(&table), "a seek leaves the cache alone");
         assert_eq!(flop, again);
     }
 
     #[test]
     fn frame__caches_a_moment_that_has_no_odds() {
         // The last moment has paid out, so it holds no percents.
-        let mut table = all_in("mode: replay\nview: all\n");
+        let mut table = Fixture::all_in("mode: replay\nview: all\n");
         table.seek(usize::MAX);
 
         assert!(table.frame().odds.is_none());
-        assert_eq!(1, cached(&table));
+        assert_eq!(1, Fixture::cached(&table));
         assert_eq!(Some(&None), table.cache.borrow().values().next());
     }
 
     #[test]
     fn frame__off_or_in_the_seat_view_leaves_the_cache_empty() {
-        let mut table = all_in("mode: replay\nview: all\nstart: flop\n");
+        let mut table = Fixture::all_in("mode: replay\nview: all\nstart: flop\n");
         table.set_odds(false);
         assert!(table.frame().odds.is_none());
-        assert_eq!(0, cached(&table));
+        assert_eq!(0, Fixture::cached(&table));
 
         table.set_odds(true);
         table.set_view("seat").unwrap();
         assert!(table.frame().odds.is_none());
-        assert_eq!(0, cached(&table));
+        assert_eq!(0, Fixture::cached(&table));
     }
 
     #[test]
     fn set_odds__keeps_the_cache() {
-        let mut table = all_in("mode: replay\nview: all\nstart: flop\n");
+        let mut table = Fixture::all_in("mode: replay\nview: all\nstart: flop\n");
         let _ = table.frame();
 
         table.set_odds(false);
@@ -866,23 +874,27 @@ mod tests {
         table.set_view("seat").unwrap();
         table.set_layout("ledger").unwrap();
 
-        assert_eq!(1, cached(&table));
+        assert_eq!(1, Fixture::cached(&table));
     }
 
     #[test]
     fn take_seat__keeps_the_cache() {
-        let mut table = all_in("mode: interactive\nview: all\nseat: 1\nstart: 1\n");
+        let mut table = Fixture::all_in("mode: interactive\nview: all\nseat: 1\nstart: 1\n");
         let _ = table.frame();
-        assert_eq!(1, cached(&table));
+        assert_eq!(1, Fixture::cached(&table));
 
         table.take_seat(1).unwrap();
 
-        assert_eq!(1, cached(&table), "the reader is not in a cached moment");
+        assert_eq!(
+            1,
+            Fixture::cached(&table),
+            "the reader is not in a cached moment"
+        );
     }
 
     #[test]
     fn act__drops_cached_moments_from_the_action_on_and_keeps_earlier_ones() {
-        let mut table = all_in("mode: interactive\nview: all\nseat: 1\nstart: 1\n");
+        let mut table = Fixture::all_in("mode: interactive\nview: all\nseat: 1\nstart: 1\n");
         table.take_seat(1).unwrap();
         let acting = table.state().moment - 1; // the index; `moment` counts from 1
         for index in [0, acting, acting + 1, acting + 2, acting + 7] {
@@ -920,7 +932,7 @@ mod tests {
 
     #[test]
     fn act__refused_keeps_the_cache() {
-        let mut table = all_in("mode: interactive\nview: all\nseat: 1\nstart: 1\n");
+        let mut table = Fixture::all_in("mode: interactive\nview: all\nseat: 1\nstart: 1\n");
         let _ = table.frame();
         table.cache.get_mut().insert(5, None);
 
@@ -930,19 +942,19 @@ mod tests {
         assert!(table.act("not json").is_err());
         assert!(table.act(r#"{"action":"dance"}"#).is_err());
 
-        assert_eq!(2, cached(&table));
+        assert_eq!(2, Fixture::cached(&table));
     }
 
     #[test]
     fn back_to_record__clears_the_cache() {
-        let mut table = all_in("mode: interactive\nview: all\nseat: 1\nstart: 1\n");
+        let mut table = Fixture::all_in("mode: interactive\nview: all\nseat: 1\nstart: 1\n");
         table.take_seat(1).unwrap();
         table.act(r#"{"action":"fold"}"#).unwrap();
         let _ = table.frame();
 
         table.back_to_record();
 
-        assert_eq!(0, cached(&table));
+        assert_eq!(0, Fixture::cached(&table));
     }
 
     #[test]
@@ -961,7 +973,7 @@ mod tests {
 
         assert_eq!(Some(&None), table.cache.borrow().get(&0));
         assert!(table.frame().odds.is_none(), "answered from the cache");
-        assert_eq!(1, cached(&table));
+        assert_eq!(1, Fixture::cached(&table));
     }
 
     #[test]
@@ -976,7 +988,7 @@ mod tests {
 
         table.next_hand().unwrap();
 
-        assert_eq!(0, cached(&table));
+        assert_eq!(0, Fixture::cached(&table));
     }
 
     #[test]
@@ -989,7 +1001,7 @@ mod tests {
 
         table.shuffle(5).unwrap();
 
-        assert_eq!(0, cached(&table));
+        assert_eq!(0, Fixture::cached(&table));
     }
 
     #[test]
