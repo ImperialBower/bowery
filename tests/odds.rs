@@ -11,7 +11,7 @@ use bowery::game::{Event, Game};
 use bowery::odds::{self, OutsBar};
 use pkcore::card::Card;
 use pkcore::casino::action::PlayerAction;
-use pkcore::hand_history::HandHistory;
+use pkcore::hand_history::{HandHistory, ReplayStreet};
 
 const BRUNSON: u8 = 0;
 const HANSEN: u8 = 3;
@@ -34,6 +34,23 @@ fn frame_at(game: &mut Game, index: usize, view: View, odds: bool) -> Frame {
     } else {
         game.frame(view)
     }
+}
+
+/// The index of the moment a street is dealt: `flop`, `turn` or `river`.
+fn moment_of(game: &Game, name: &str) -> usize {
+    let street = match name {
+        "flop" => ReplayStreet::Flop,
+        "turn" => ReplayStreet::Turn,
+        "river" => ReplayStreet::River,
+        other => panic!("no street named {other}"),
+    };
+    (0..game.moments())
+        .find(|index| game.event_at(*index) == Some(&Event::Deal(street)))
+        .unwrap()
+}
+
+fn turn_of(game: &Game) -> usize {
+    moment_of(game, "turn")
 }
 
 fn index_of(frame: &Frame, seat: u8) -> usize {
@@ -184,4 +201,64 @@ fn outs_bar__display() {
         ..bar
     };
     assert_eq!("Gus Hansen · drawing dead · 0%", dead.to_string());
+}
+
+#[test]
+fn outs__two_left_one_card_to_come_lists_the_trailing_seats_outs() {
+    let mut game = game("mode: replay\n", "tests/hands/three_way_outs.yaml");
+    let turn = turn_of(&game);
+    let frame = frame_at(&mut game, turn, View::All, true);
+    let bar = frame.odds.unwrap().outs.expect("a bar at the turn");
+    assert_eq!(0, bar.seat);
+    assert_eq!("Draw", bar.name);
+    let cards: Vec<String> = bar.cards.iter().map(ToString::to_string).collect();
+    assert_eq!(
+        vec!["T♥", "T♦", "T♣", "5♠", "5♥", "5♦", "5♣"],
+        cards,
+        "T♠ is in the folded hand"
+    );
+    assert_eq!(
+        18, bar.percent,
+        "pkcore counts the folded T♠ as live until EPIC-123"
+    );
+}
+
+#[test]
+fn outs__a_pair_of_sixes_behind_quad_fives_has_one_out() {
+    // The Hand's turn: Hansen has quad fives, Negreanu sixes full of fives.
+    // He is not drawing dead: the 6♣ makes quad sixes, and nobody holds it.
+    let mut game = the_hand("mode: replay\n");
+    let turn = turn_of(&game);
+    let frame = frame_at(&mut game, turn, View::All, true);
+    let bar = frame.odds.unwrap().outs.expect("a bar at the turn");
+    assert_eq!(NEGREANU, bar.seat);
+    assert_eq!("Daniel Negreanu", bar.name);
+    assert_eq!(vec![card("6♣")], bar.cards);
+    assert_eq!(2, bar.percent);
+}
+
+#[test]
+fn outs__no_bar_on_the_flop_or_the_river() {
+    let mut game = the_hand("mode: replay\n");
+    for moment in ["flop", "river"] {
+        let index = moment_of(&game, moment);
+        assert_eq!(
+            None,
+            frame_at(&mut game, index, View::All, true)
+                .odds
+                .unwrap()
+                .outs,
+            "{moment}"
+        );
+    }
+}
+
+#[test]
+fn outs__no_bar_with_three_live_seats() {
+    // The first preflop moment of The Hand: eight seats live, no bar.
+    let mut game = the_hand("mode: replay\n");
+    assert_eq!(
+        None,
+        frame_at(&mut game, 0, View::All, true).odds.unwrap().outs
+    );
 }

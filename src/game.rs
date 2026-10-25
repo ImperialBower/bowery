@@ -1662,4 +1662,23 @@ mod tests {
             default_seed(&Config::from_yaml("mode: replay\n").unwrap())
         );
     }
+
+    #[test]
+    fn seed__hashes_the_config_unless_it_gives_one() {
+        let play = |extra: &str| {
+            let config = Config::from_yaml(&format!(
+                "mode: play\n{extra}table: {{ stakes: {{ small_blind: 1.0, big_blind: 2.0 }} }}\nplayers: [ {{ seat: 0, stack: 200 }}, {{ seat: 1, stack: 200, bot: abc }} ]\n"
+            ))
+            .unwrap();
+            Game::new(crate::check::check(&config).unwrap()).unwrap()
+        };
+
+        assert_eq!(
+            play("").seed(),
+            play("").seed(),
+            "the same config, the same seed"
+        );
+        assert_eq!(7, play("seed: 7\n").seed());
+        assert_ne!(play("").seed(), play("seed: 7\n").seed());
+    }
 }
