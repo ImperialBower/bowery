@@ -273,6 +273,10 @@ class BoweryTableElement extends HTMLElement {
     if (state.controls.layout) {
       add(button(`▦ ${state.layout}`, () => this._toggleLayout(state.layout)), 'layout');
     }
+    if (state.controls.odds) {
+      const odds = add(button(`% ${state.odds ? 'on' : 'off'}`, () => this._toggleOdds(state.odds), 'odds'), 'odds');
+      odds.setAttribute('aria-pressed', String(state.odds));
+    }
     const again = focused && bar.querySelector(`[data-control="${focused}"]`);
     if (again) again.focus();
   }
@@ -364,6 +368,11 @@ class BoweryTableElement extends HTMLElement {
 
   _toggleView(view) {
     this._table.set_view(view === 'all' ? 'seat' : 'all');
+    this._render();
+  }
+
+  _toggleOdds(on) {
+    this._table.set_odds(!on);
     this._render();
   }
 

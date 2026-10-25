@@ -14,6 +14,10 @@ export interface Snapshot {
   /** Text in each bet slot. */
   bets: string[];
   toAct: number;
+  /** Every percent on the plates, in document order. */
+  odds: string[];
+  /** The cards on the outs bar, in order. */
+  outs: string[];
   buttons: string[];
 }
 
@@ -45,6 +49,8 @@ export async function snapshot(page: Page, id: string): Promise<Snapshot> {
       backs,
       bets: [...svg.querySelectorAll('g.bet')].map((bet) => bet.textContent ?? ''),
       toAct: svg.querySelectorAll('g.seat.to-act').length,
+      odds: [...svg.querySelectorAll('text.odds')].map((odds) => odds.textContent ?? ''),
+      outs: [...svg.querySelectorAll('g.outs [data-card]')].map((card) => (card as SVGGElement).dataset.card!),
       buttons: [...root.querySelectorAll('.bar button')].map((button) => button.getAttribute('aria-label') ?? button.textContent ?? ''),
     };
   }, id);
